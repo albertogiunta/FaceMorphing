@@ -8,5 +8,5 @@ if __name__ == '__main__':
     feature_vectors = face_rec.get_descriptors_for_images(faces_pairs_path)
     euclidean_distance = face_rec.calculate_euclidean_distance(feature_vectors[0], feature_vectors[1])
 
-    print("Match found: " + str(face_rec.is_pair_from_same_person(euclidean_distance)))
-    print("Euclidean distance: " + str(euclidean_distance))
+    print("Match found: {}".format(face_rec.is_pair_from_same_person(euclidean_distance)))
+    print("Euclidean distance: {}".format(euclidean_distance))
