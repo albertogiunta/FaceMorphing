@@ -1,4 +1,5 @@
 import glob
+import os
 
 import dlib
 import numpy as np
@@ -12,27 +13,36 @@ class FaceRecognition:
         self.shape_predictor = dlib.shape_predictor(shape_predictor_path)
         self.face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 
-    def get_descriptors_for_images(self, faces_pair_path):
+    def get_img_pair_descriptors(self, faces_pair_folder_path):
         descriptors = []
 
-        images = glob.glob(faces_pair_path)
+        images = glob.glob(faces_pair_folder_path)
 
         if len(images) > 2:
             print("ERROR: There are more than 2 pictures in the specified folder ({})".format(faces_pairs_path))
             exit(0)
 
-        for img in images:
-            print("Processing image: {}".format(img))
-            descriptors.append(self.get_img_descriptor(img))
+        for img_path in images:
+            descriptors.append(self.get_img_descriptor(img_path=img_path))
 
         return np.array(descriptors)
 
-    def get_img_descriptor(self, img):
+    def get_img_descriptor(self, img_path=None, img_name=None, img_folder=None):
+        if img_path is None:
+            img_path = glob.glob(os.path.join("../{}".format(img_folder), img_name))[0]
+
+        print("Processing image: {}".format(img_path))
+
         upsample_times = 1  # Upsampling will make everything bigger and allow us to detect more faces.
         num_jitters = 0  # NB this makes time complexity increase linearly
-        img = dlib.load_rgb_image(img)
+        img = dlib.load_rgb_image(img_path)
 
         faces_bounding_boxes = self.frontal_face_detector(img, upsample_times)
+
+        if len(faces_bounding_boxes) != 1:
+            print("ERROR: There should be only 1 face per image, instead there are {} in image {}".format(
+                len(faces_bounding_boxes), img_path))
+            exit()
 
         for box_index, bounding_box in enumerate(faces_bounding_boxes):
             shape = self.shape_predictor(img, bounding_box)
@@ -71,8 +81,5 @@ if __name__ == '__main__':
     shape_predictor_path, face_rec_model_path, faces_pairs_path = models_utils.model_paths(from_argv=True)
 
     face_rec = FaceRecognition(shape_predictor_path, face_rec_model_path)
-    feature_vectors = face_rec.get_descriptors_for_images(faces_pairs_path)
-    euclidean_distance = face_rec.calculate_euclidean_distance(feature_vectors[0], feature_vectors[1])
-
-    print("Match found: {}".format(face_rec.is_pair_from_same_person(euclidean_distance)))
-    print("Euclidean distance: {}".format(euclidean_distance))
+    feature_vector = face_rec.get_img_descriptor(img_name="george1.png", img_folder="img")
+    print(feature_vector)
