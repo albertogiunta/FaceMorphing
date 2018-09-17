@@ -7,7 +7,7 @@ import numpy as np
 from utils import models_utils
 
 
-class FaceRecognition:
+class CNNFeatureVectorExtraction:
     def __init__(self, shape_predictor_path, face_rec_model_path):
         self.frontal_face_detector = dlib.get_frontal_face_detector()
         self.shape_predictor = dlib.shape_predictor(shape_predictor_path)
@@ -80,6 +80,6 @@ class FaceRecognition:
 if __name__ == '__main__':
     shape_predictor_path, face_rec_model_path, faces_pairs_path = models_utils.model_paths(from_argv=True)
 
-    face_rec = FaceRecognition(shape_predictor_path, face_rec_model_path)
+    face_rec = CNNFeatureVectorExtraction(shape_predictor_path, face_rec_model_path)
     feature_vector = face_rec.get_img_descriptor(img_name="george1.png", img_folder="img")
     print(feature_vector)
