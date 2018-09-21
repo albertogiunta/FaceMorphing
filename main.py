@@ -1,4 +1,4 @@
-from featureExtraction.fve_cnn import CNNFeatureVectorExtraction
+from featureExtraction.cnn_fv_extraction import CNNFeatureVectorExtraction
 from utils import models_utils
 
 if __name__ == '__main__':
