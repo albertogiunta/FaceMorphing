@@ -1,6 +1,7 @@
 import dlib
 import numpy as np
 
+import utils.img_utils as img_utils
 from featureExtraction.abstract_extraction import AbstractFVExtraction
 from utils import models_utils
 
@@ -12,24 +13,19 @@ class CNNFeatureVectorExtraction(AbstractFVExtraction):
         self.shape_predictor = dlib.shape_predictor(shape_predictor_path)
         self.face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 
-    def get_img_descriptor(self, img_path=None, img_name=None, img_folder=None):
-        img = self.load_img_dlib(self.compile_img_path(img_path, img_name, img_folder))
+    def get_img_descriptor(self, img_path):
+        img = img_utils.load_img_dlib(img_path)
 
         upsample_times = 1  # Upsampling will make everything bigger and allow us to detect more faces.
         num_jitters = 0  # NB this makes time complexity increase linearly
 
         faces_bounding_boxes = self.frontal_face_detector(img, upsample_times)
 
-        if len(faces_bounding_boxes) != 1:
-            print("ERROR: There should be only 1 face per image, instead there are {} in image {}".format(
-                len(faces_bounding_boxes), img_path))
-            exit()
-
         for box_index, bounding_box in enumerate(faces_bounding_boxes):
             shape = self.shape_predictor(img, bounding_box)
             feature_vector = np.array(self.face_rec_model.compute_face_descriptor(img, shape, num_jitters))
 
-            # self.show_img_dlib(img, bounding_box, shape)
+            img_utils.show_img_dlib(img, bounding_box, shape)
             # print(feature_vector)
 
             return feature_vector
@@ -53,5 +49,5 @@ if __name__ == '__main__':
     shape_predictor_path, face_rec_model_path, faces_pairs_path = models_utils.model_paths(from_argv=True)
 
     face_rec = CNNFeatureVectorExtraction(shape_predictor_path, face_rec_model_path)
-    feature_vector = face_rec.get_img_descriptor(img_name="george1.png", img_folder="img")
+    feature_vector = face_rec.get_img_descriptor(img_utils.compile_img_path(img_name="george1.png", img_folder="img"))
     print(feature_vector)

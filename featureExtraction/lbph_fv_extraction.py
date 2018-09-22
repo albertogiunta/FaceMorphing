@@ -3,6 +3,7 @@ import numpy as np
 from skimage import feature as sk
 from skimage.util import view_as_blocks
 
+import utils.img_utils as img_utils
 from featureExtraction.abstract_extraction import AbstractFVExtraction
 
 
@@ -17,9 +18,9 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         self.n_cols = int(self.img_size[1] / self.grid_size[1])
         self.nbp_method = ("default", 256)  # number of possible "colors", default = (0 to 255)
 
-    def get_img_descriptor(self, img_path=None, img_name=None, img_folder=None):
-        img = self.load_img_skimage(self.compile_img_path(img_path, img_name, img_folder))
-        self.show_img_skimage(img)
+    def get_img_descriptor(self, img_path):
+        img = self.load_img_skimage(img_path)
+        img_utils.show_img_skimage(img)
 
         lbp_img = sk.local_binary_pattern(img, self.neighbours, self.radius, method=self.nbp_method[0])
         lbp_img_as_blocks = view_as_blocks(lbp_img, self.grid_size)
@@ -42,5 +43,5 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
 
 if __name__ == '__main__':
     lbph = LBPHFeatureVectorExtraction()
-    feature_vector = lbph.get_img_descriptor(img_name="george1.png", img_folder="img")
+    feature_vector = lbph.get_img_descriptor(img_utils.compile_img_path(img_name="george1.png", img_folder="img"))
     print(feature_vector)
