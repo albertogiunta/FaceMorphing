@@ -1,0 +1,31 @@
+{
+  "paths": {
+    "SVM": "../models/SVM_classifier_model.pickle",
+    "faceRecog1": "../models/dlib_face_recognition_resnet_model_v1.dat",
+    "shapePredictor": "../models/shape_predictor_5_face_landmarks.dat",
+    "img": "../img"
+  },
+  "preprocessing": {
+    "upsampleTimes": 1,
+    "imgSquareSize": 256
+  },
+  "FVExtractionCnn": {
+    "upsampleTimes": 1,
+    "numJitters": 0
+  },
+  "FVExtractionLbph": {
+    "neighbours": 8,
+    "radius": 1,
+    "gridSize": 8,
+    "imgSize": 256,
+    "nRows": 32,
+    "nCols": 32,
+    "lbpMethodName": "default",
+    "lbpMethodColors": 256
+  },
+  "FVMerging": {
+    "differential": {},
+    "patchWise": {}
+  },
+  "SVMClassification": {}
+}
