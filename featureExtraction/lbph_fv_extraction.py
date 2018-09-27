@@ -31,7 +31,7 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         return self._get_img_descriptor()
 
     def _get_img_descriptor(self):
-        img_utils.show_img_skimage(self.img)
+        # img_utils.show_img_skimage(self.img)
 
         lbp_img = sk.local_binary_pattern(self.img, self.neighbours, self.radius, method=self.nbp_method_name)
         lbp_img_as_blocks = view_as_blocks(lbp_img, (self.grid_size, self.grid_size))

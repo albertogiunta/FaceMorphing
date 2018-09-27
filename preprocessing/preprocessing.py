@@ -3,6 +3,8 @@
 #   pyramid, and sliding window detection scheme.
 
 import dlib
+from skimage.color import rgb2gray
+from skimage.transform import resize
 
 from utils import config_utils
 from utils import img_utils
@@ -49,7 +51,7 @@ class Preprocessing:
         # img = dlib.get_face_chips(img, faces, size=246)
         # img_utils.show_img_dlib(img[0])
 
-        return img
+        return resize(rgb2gray(img), (self.img_square_size, self.img_square_size), anti_aliasing=True, mode="constant")
 
 
 if __name__ == '__main__':
