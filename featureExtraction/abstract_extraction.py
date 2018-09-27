@@ -16,10 +16,10 @@ class AbstractFVExtraction:
             exit(0)
 
         for img_path in images:
-            descriptors.append(self.get_img_descriptor(img_path))
+            descriptors.append(self.get_img_descriptor_from_path(img_path))
 
         return np.array(descriptors)
 
     @abstractmethod
-    def get_img_descriptor(self, img_path):
+    def get_img_descriptor_from_path(self, img_path):
         pass

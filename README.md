@@ -43,7 +43,3 @@ Source: [Instructions](https://www.learnopencv.com/install-dlib-on-macos/)
 #### Install X11
 
 Go [here](https://www.xquartz.org/), follow installation instructions and log out and log back in.
-
-#### Install sci-kit (for LBPH)
-
-`pip install scikit-image`
