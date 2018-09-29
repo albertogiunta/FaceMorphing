@@ -22,19 +22,22 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         self.nbp_method_name = self.conf["lbpMethodName"]
         self.nbp_method_colors = self.conf["lbpMethodColors"]
 
-    def get_img_descriptor_from_img(self, img):
+    def get_img_descriptor_from_img(self, img, use_blocks=True):
         self.img = img
-        return self._get_img_descriptor()
+        return self._get_img_descriptor(use_blocks)
 
     def get_img_descriptor_from_path(self, img_path):
         self.img = img_utils.load_img_skimage(img_path)
         return self._get_img_descriptor()
 
-    def _get_img_descriptor(self):
+    def _get_img_descriptor(self, use_blocks=True):
         # img_utils.show_img_skimage(self.img)
 
         lbp_img = sk.local_binary_pattern(self.img, self.neighbours, self.radius, method=self.nbp_method_name)
-        lbp_img_as_blocks = view_as_blocks(lbp_img, (self.grid_size, self.grid_size))
+        if use_blocks:
+            lbp_img_as_blocks = view_as_blocks(lbp_img, (self.grid_size, self.grid_size))
+        else:
+            lbp_img_as_blocks = lbp_img
 
         feature_vector = np.array([])
 

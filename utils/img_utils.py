@@ -3,7 +3,6 @@ import os
 
 import dlib
 from skimage import io
-from skimage.color import rgb2gray
 from skimage.transform import resize
 
 
@@ -33,7 +32,7 @@ def load_imgs_in_folder(folder):
 def load_img_skimage(img_path):
     from utils import config_utils
     size = config_utils.get_config("preprocessing")["imgSquareSize"]
-    return resize(rgb2gray(io.imread(img_path)), (size, size), anti_aliasing=True, mode="constant")
+    return resize(io.imread(img_path), (size, size), anti_aliasing=True, mode="constant")
 
 
 def load_img_dlib_rgb(img_path):
