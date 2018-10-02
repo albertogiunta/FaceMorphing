@@ -149,7 +149,7 @@ if __name__ == '__main__':
         # vector = get_element_to_be_classified(patch_wise_method, lbph_method, preproc_imgs[0], preproc_imgs[1])
         # vector = get_element_to_be_classified(patch_wise_method, cnn_method, preproc_imgs[0], preproc_imgs[1])
 
-        show_imgs(preproc_imgs)
+        # show_imgs(preproc_imgs)
 
         # SVM
         prediction = classify(vector)
