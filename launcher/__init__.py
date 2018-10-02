@@ -115,7 +115,7 @@ def show_imgs(imgs):
     io.show()
 
 
-def dispatch(imgs_to_be_checked, all_morphed, all_genuine, method):
+def dispatch(method):
     data = []
     for i, img in enumerate(all_morphed):
         if imgs_to_be_checked != 0 and i >= imgs_to_be_checked:
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     if SHOULD_TRAIN:
         print("Training...")
         # get feature vectors for all images pairs
-        data = dispatch(imgs_to_be_checked, all_morphed, all_genuine, CURRENT_METHOD)
+        data = dispatch(CURRENT_METHOD)
 
         # save vectors to file
         with open('../models/data/' + CURRENT_METHOD + '_data.json', 'w') as outfile:
