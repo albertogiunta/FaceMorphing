@@ -17,30 +17,21 @@ class CNNFeatureVectorExtraction(AbstractFVExtraction):
         self.upsample_times = self.conf["upsampleTimes"]
         self.num_jitters = self.conf["numJitters"]
 
-    def get_img_descriptor_from_img(self, img, use_blocks=False):
+    def get_img_descriptor_from_img(self, img):
         self.img = img
-        return self._get_img_descriptor(use_blocks)
+        return self._get_img_descriptor()
 
     def get_img_descriptor_from_path(self, img_path):
         self.img = img_utils.load_img_dlib_rgb(img_path)
         return self._get_img_descriptor()
 
-    def _get_img_descriptor(self, use_blocks=False):
-        # if use_blocks == False:
-        #     faces_bounding_boxes = self.frontal_face_detector(self.img, self.upsample_times)
-        # else:
-        #     faces_bounding_boxes =
+    def _get_img_descriptor(self):
         faces_bounding_boxes = self.frontal_face_detector(self.img, self.upsample_times)
 
         for box_index, bounding_box in enumerate(faces_bounding_boxes):
             shape = self.shape_predictor(self.img, bounding_box)
-            print(type(bounding_box))
-            print(type(shape))
-            feature_vector = np.array(self.face_rec_model.compute_face_descriptor(self.img, shape, self.num_jitters))
-
             # img_utils.show_img_dlib(self.img, bounding_box, shape)
-            print(feature_vector)
-
+            feature_vector = np.array(self.face_rec_model.compute_face_descriptor(self.img, shape, self.num_jitters))
             return feature_vector
 
 

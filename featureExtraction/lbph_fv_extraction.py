@@ -22,28 +22,31 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         self.nbp_method_name = self.conf["lbpMethodName"]
         self.nbp_method_colors = self.conf["lbpMethodColors"]
 
-    def get_img_descriptor_from_img(self, img, use_blocks=True):
+    def get_img_descriptor_from_img(self, img, is_PPC):
         self.img = img
-        return self._get_img_descriptor(use_blocks)
+        return self._get_img_descriptor(is_PPC)
 
     def get_img_descriptor_from_path(self, img_path):
         self.img = img_utils.load_img_skimage(img_path)
         return self._get_img_descriptor()
 
-    def _get_img_descriptor(self, use_blocks=True):
+    def _get_img_descriptor(self, is_PPC):
         # img_utils.show_img_skimage(self.img)
 
         lbp_img = sk.local_binary_pattern(self.img, self.neighbours, self.radius, method=self.nbp_method_name)
-        if use_blocks:
-            lbp_img_as_blocks = view_as_blocks(lbp_img, (self.grid_size, self.grid_size))
-        else:
+
+        if is_PPC:
+            print("todo")
             lbp_img_as_blocks = lbp_img
+        else:
+            lbp_img_as_blocks = view_as_blocks(lbp_img, (
+            int(self.img_size / self.grid_size), int(self.img_size / self.grid_size)))
 
         feature_vector = np.array([])
-
         for row in range(self.n_rows):
             for col in range(self.n_cols):
                 curr_block = lbp_img_as_blocks[row, col]
+                # hist will be 255 elements long because 255 is the number of colors used as bins
                 hist, _ = np.histogram(curr_block.ravel(), bins=np.arange(0, self.nbp_method_colors))
                 feature_vector = np.append(feature_vector, hist)
                 # self._show_block_histogram(curr_block)

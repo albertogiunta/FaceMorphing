@@ -18,8 +18,8 @@
     "radius": 1,
     "gridSize": 8,
     "imgSize": 256,
-    "nRows": 16,
-    "nCols": 16,
+    "nRows": 8,
+    "nCols": 8,
     "lbpMethodName": "default",
     "lbpMethodColors": 256
   },
