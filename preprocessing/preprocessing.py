@@ -56,9 +56,9 @@ class Preprocessing:
 if __name__ == '__main__':
     preproc = Preprocessing()
     img = preproc.preprocess_img_path(
-        img_utils.compile_img_path(img_name="00002_930831_fa.png", img_folder="biometrix/genuine"))
+        img_utils.compile_img_path(img_name="00002_930831_fa.png", img_folder="biometix/genuine"))
     img2 = preproc.preprocess_img_path(
-        img_utils.compile_img_path(img_name="M_00002_00320.jpg", img_folder="biometrix/morphed"))
+        img_utils.compile_img_path(img_name="M_00002_00320.jpg", img_folder="biometix/morphed"))
 
     img_utils.show_img_skimage(img)
     img_utils.show_img_skimage(img2)

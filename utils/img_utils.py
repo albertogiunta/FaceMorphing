@@ -48,6 +48,11 @@ def show_img_skimage(image):
     io.show()
 
 
+def show_imgs_skimage(imgs):
+    io.imshow_collection(imgs)
+    io.show()
+
+
 def print_bounding_box(box_index, bounding_box):
     print("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(box_index, bounding_box.left(),
                                                                        bounding_box.top(), bounding_box.right(),

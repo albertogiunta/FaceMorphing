@@ -4,6 +4,10 @@ import numpy as np
 class DifferentialComparison:
 
     @staticmethod
+    def get_differential_fv_from_vector(binary_vector):
+        return binary_vector[0] - binary_vector[1]
+
+    @staticmethod
     def get_differential_fv(reference_fv, bonafide_fv):
         return reference_fv - bonafide_fv
 

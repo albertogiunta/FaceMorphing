@@ -1,232 +1,226 @@
-import glob
 import json
-import re
 
-import numpy as np
 import skimage
-from numpy import shape
-from skimage import io
 from skimage.color import rgb2gray
 from skimage.util import view_as_blocks
 
-from SVM.svm_classification import SVMClassifier
-from featureExtraction import CNNFeatureVectorExtraction
-from featureExtraction.lbph_fv_extraction import LBPHFeatureVectorExtraction
 from featureVectorMerging.differential_comparison import DifferentialComparison
-from preprocessing.preprocessing import Preprocessing
+from utils.config_utils import NumpyEncoder
+
+FVC_CNN = "FVC_CNN"
+FVC_LBPH = "FVC_LBPH"
+
+DFC_CNN = "DFC_CNN"
+DFC_LBPH = "DFC_LBPH"
+
+PPC4_LBPH = "PPC4_LBPH"
+PPC8_LBPH = "PPC8_LBPH"
+PPC12_LBPH = "PPC12_LBPH"
+PPC16_LBPH = "PPC16_LBPH"
+
+# TODO implement this
+MSPPC_CNN = "MSPPC_CNN"
+MSPPC_LBPH = "MSPPC_LBPH"
+
+data = {
+    'fv': None,
+    "cls": None
+}
 
 
-def get_path_of_morphed_and_base_genuine(morphed_path):
-    genuine_ids = re.findall(pattern_extract_genuine_ids_from_morphed, morphed_path)
-    base_genuine_id = genuine_ids[1]  # change to 0 to check the other image used for the attack
-    pattern_match_genuine = re.compile('(.+' + base_genuine_id + '.+)')
-    genuine_path = next(x for x in all_genuine if pattern_match_genuine.search(x) is not None)
-
-    print("Genuine (Base) : {}\n"
-          "Morphed: {} + {}\n"
-          .format(base_genuine_id, genuine_ids[0], genuine_ids[1]))
-
-    return genuine_path, morphed_path, base_genuine_id, genuine_ids
-
-
-def apply_preproc(genuine_path, morphed_path):
-    preproc_imgs = []
+def apply_preproc(*args):
+    from preprocessing.preprocessing import Preprocessing
     preproc = Preprocessing()
+    preproc_imgs = []
 
-    preproc_imgs.append(preproc.preprocess_img_path(genuine_path))
-    preproc_imgs.append(preproc.preprocess_img_path(morphed_path))
+    for img in args:
+        preproc_imgs.append(preproc.preprocess_img(img))
 
     return preproc_imgs
 
 
-def apply_cnn(genuine, morphed):
+def apply_cnn(*args):
+    from featureExtraction import CNNFeatureVectorExtraction
+    cnn = CNNFeatureVectorExtraction()
     feature_vectors = []
 
-    genuine = skimage.img_as_ubyte(genuine)
-    morphed = skimage.img_as_ubyte(morphed)
-
-    cnn = CNNFeatureVectorExtraction()
-    feature_vectors.append(cnn.get_img_descriptor_from_img(genuine))
-    feature_vectors.append(cnn.get_img_descriptor_from_img(morphed))
+    for img in args:
+        temp_img = skimage.img_as_ubyte(img)
+        feature_vectors.append(cnn.get_img_descriptor_from_img(temp_img))
 
     return feature_vectors
 
 
-def apply_lbph(genuine, morphed, is_PPC):
+def apply_lbph_to_whole_img(*args):
+    from featureExtraction.lbph_fv_extraction import LBPHFeatureVectorExtraction
+    from skimage.color import rgb2gray
+    lbph = LBPHFeatureVectorExtraction()
     feature_vectors = []
 
-    genuine = rgb2gray(genuine)
-    morphed = rgb2gray(morphed)
+    for img in args:
+        temp_img = rgb2gray(img)
+        feature_vectors.append(lbph.get_img_descriptor_from_img(temp_img))
+
+    return feature_vectors
+
+
+def apply_lbph_to_patch(*args):
+    from featureExtraction.lbph_fv_extraction import LBPHFeatureVectorExtraction
+    from skimage.color import rgb2gray
 
     lbph = LBPHFeatureVectorExtraction()
-    feature_vectors.append(lbph.get_img_descriptor_from_img(genuine, is_PPC))
-    feature_vectors.append(lbph.get_img_descriptor_from_img(morphed, is_PPC))
+
+    feature_vectors = []
+
+    for img in args:
+        temp_img = rgb2gray(img)
+        feature_vectors.append(lbph.get_img_descriptor_from_patch(temp_img))
+
     return feature_vectors
 
 
-def classify(differential_fv):
-    svm = SVMClassifier()
-    value = svm.predict_class(differential_fv)
-    return value
+def get_patched_lbph_fv(img_pair, grid_size):
+    temp_result = []
+
+    img_pair[0] = rgb2gray(img_pair[0])
+    img_pair[1] = rgb2gray(img_pair[1])
+
+    img_size = 256
+    margin = 256 % grid_size
+    if margin != 0:
+        if margin % 4 == 0:
+            edge_crop = int(margin / 2)
+            for i, img in enumerate(img_pair):
+                img_pair[i] = skimage.util.crop(img, edge_crop)
+        else:
+            print("Image size and grid size are REALLY not compatible.")
+            exit(-1)
+
+    patch_shape = (int((img_size - margin) / grid_size), int((img_size - margin) / grid_size))
+    patched_pair = [view_as_blocks(img_pair[0], patch_shape),
+                    view_as_blocks(img_pair[1], patch_shape)]
+
+    for i, row in enumerate(patched_pair[0]):
+        for j, col in enumerate(patched_pair[0][i]):
+            patch_pair = [patched_pair[0][i, j], patched_pair[1][i, j]]
+            feature_vectors = apply_lbph_to_patch(patch_pair[0], patch_pair[1])
+
+            euclidean = DifferentialComparison.calculate_euclidean_distance(feature_vectors[0],
+                                                                            feature_vectors[1])
+            temp_result.append(euclidean)
+
+    return temp_result
 
 
-# image_comparison_method: full_image OR patch_wise
-# fv_extraction_method: cnn OR lbph
-def get_element_to_be_classified(image_comparison_method, fv_extraction_method, genuine, morphed):
-    feature_vectors = None
-
-    if image_comparison_method == "full_image":
-        if fv_extraction_method == "cnn":
-            feature_vectors = apply_cnn(genuine, morphed)
-        elif fv_extraction_method == "lbph":
-            feature_vectors = apply_lbph(genuine, morphed, is_PPC=False)
-        differential = DifferentialComparison.get_differential_fv(feature_vectors[1], feature_vectors[0])
-        return differential
-
-    elif image_comparison_method == "patch_wise":
-        patch_size = 16
-        patch_shape = (patch_size, patch_size)
-        print(shape(genuine))
-        patched_genuine = view_as_blocks(rgb2gray(genuine), patch_shape)
-        patched_morphed = view_as_blocks(rgb2gray(morphed), patch_shape)
-        print(shape(patched_genuine))
-
-        concatenated = []
-
-        for i, row in enumerate(patched_genuine):
-            print(i)
-            for j, col in enumerate(patched_genuine[i]):
-                print("              " + str(j))
-                genuine_patch = patched_genuine[i, j]
-                morphed_patch = patched_morphed[i, j]
-                if fv_extraction_method == "cnn":
-                    feature_vectors = apply_cnn(genuine_patch, morphed_patch)
-                elif fv_extraction_method == "lbph":
-                    feature_vectors = apply_lbph(genuine_patch, morphed_patch, is_PPC=True)
-
-                euclidean = DifferentialComparison.calculate_euclidean_distance(feature_vectors[0], feature_vectors[1])
-                concatenated.append(euclidean)
-
-        return concatenated
+def process_singles(singles):
+    result = []
+    for img in singles:
+        preprocessed_img = apply_preproc(img)[0]
+        if CURRENT_METHOD == FVC_CNN:
+            result.append(apply_cnn(preprocessed_img))
+        elif CURRENT_METHOD == FVC_LBPH:
+            result.append(apply_lbph_to_whole_img(preprocessed_img))
+    return result
 
 
-def show_imgs(imgs):
-    io.imshow_collection(imgs)
-    io.show()
+def process_pairs(pairs):
+    result = []
+    for pair in pairs:
+        preprocessed_pair = apply_preproc(pair[0], pair[1])
+        if CURRENT_METHOD == DFC_CNN:
+            feature_vectors = apply_cnn(preprocessed_pair[0], preprocessed_pair[1])
+            result.append(DifferentialComparison.get_differential_fv_from_vector(feature_vectors))
+        elif CURRENT_METHOD == DFC_LBPH:
+            feature_vectors = apply_lbph_to_whole_img(preprocessed_pair[0], preprocessed_pair[1])
+            result.append(DifferentialComparison.get_differential_fv_from_vector(feature_vectors))
+        elif CURRENT_METHOD == PPC4_LBPH:
+            result.append(get_patched_lbph_fv(preprocessed_pair, 4))
+        elif CURRENT_METHOD == PPC8_LBPH:
+            result.append(get_patched_lbph_fv(preprocessed_pair, 8))
+        elif CURRENT_METHOD == PPC12_LBPH:
+            result.append(get_patched_lbph_fv(preprocessed_pair, 12))
+        elif CURRENT_METHOD == PPC16_LBPH:
+            result.append(get_patched_lbph_fv(preprocessed_pair, 16))
+
+    return result
 
 
-def dispatch(method):
-    data = []
-    for i, img in enumerate(all_morphed):
-        if imgs_to_be_checked != 0 and i >= imgs_to_be_checked:
-            break
-
-        print("Processign mage #{}".format(i))
-        genuine_path, morphed_path, genuine_id, (morphed_id_1, morphed_id_2) = get_path_of_morphed_and_base_genuine(img)
-
-        # preprocess: 1st genuine, 2nd morphed
-        preproc_imgs = apply_preproc(genuine_path, morphed_path)
-        # show_imgs(preproc_imgs)
-
-        full_image_method = "full_image"
-        patch_wise_method = "patch_wise"
-        lbph_method = "lbph"
-        cnn_method = "cnn"
-
-        image_data = {
-            "investigated_image_name": morphed_id_1 + "_" + morphed_id_2,
-            "probe_image_name": genuine_id,
-            "class": -1,
-            "classification_data": []
-        }
-
-        if method == "FVC_CNN":
-            print("todo")
-        elif method == "DFC_CNN":
-            image_data["classification_data"] = get_element_to_be_classified(full_image_method, cnn_method,
-                                                                             preproc_imgs[0], preproc_imgs[1])
-        elif method == "MSPPC_CNN":
-            print("todo")
-        elif method == "PPC4_CNN":
-            print("todo")
-        elif method == "PPC8_CNN":
-            print("todo")
-        elif method == "PPC12_CNN":
-            print("todo")
-        elif method == "PPC16_CNN":
-            print("todo")
-        elif method == "FVC_LBPH":
-            print("todo")
-        elif method == "DFC_LBPH":
-            image_data["classification_data"] = get_element_to_be_classified(full_image_method, lbph_method,
-                                                                             preproc_imgs[0], preproc_imgs[1])
-        elif method == "MSPPC_LBPH":
-            print("todo")
-        elif method == "PPC4_LBPH":
-            print("todo")
-        elif method == "PPC8_LBPH":
-            print("todo")
-        elif method == "PPC12_LBPH":
-            print("todo")
-        elif method == "PPC16_LBPH":
-            print("todo")
-
-        data.append(image_data)
-
-    return data
+def process_morphed_singles():
+    from launcher.biometix_runner import get_morphed_images
+    imgs = get_morphed_images(IMGS_TO_BE_PROCESSED)
+    return process_singles(imgs)
 
 
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
+def process_genuine_singles():
+    from launcher.biometix_runner import get_genuine_images
+    imgs = get_genuine_images(IMGS_TO_BE_PROCESSED)
+    return process_singles(imgs)
+
+
+def process_morphed_pairs():
+    from launcher.biometix_runner import get_morphed_genuine_pairs
+    pairs = get_morphed_genuine_pairs(IMGS_TO_BE_PROCESSED)
+    return process_pairs(pairs)
+
+
+def process_genuine_pairs():
+    from launcher.feret_runner import get_genuine_genuine_pairs
+    pairs = get_genuine_genuine_pairs(IMGS_TO_BE_PROCESSED)
+    return process_pairs(pairs)
+
+
+def get_data_to_be_written(feature_vectors, cls):
+    result = []
+    for fv in feature_vectors:
+        data['fv'] = fv
+        data['cls'] = cls
+        result.append(data)
+    return result
+
+
+def save_to_file(data):
+    with open('../assets/data/' + CURRENT_METHOD + '_data.json', 'w') as outfile:
+        json.dump(data, outfile, cls=NumpyEncoder)
 
 
 if __name__ == '__main__':
-    FVC_CNN = "FVC_CNN"
-    DFC_CNN = "DFC_CNN"
-    MSPPC_CNN = "MSPPC_CNN"
-    PPC4_CNN = "PPC4_CNN"
-    PPC8_CNN = "PPC8_CNN"
-    PPC12_CNN = "PPC12_CNN"
-    PPC16_CNN = "PPC16_CNN"
-    FVC_LBPH = "FVC_LBPH"
-    DFC_LBPH = "DFC_LBPH"
-    MSPPC_LBPH = "MSPPC_LBPH"
-    PPC4_LBPH = "PPC4_LBPH"
-    PPC8_LBPH = "PPC8_LBPH"
-    PPC12_LBPH = "PPC12_LBPH"
-    PPC16_LBPH = "PPC16_LBPH"
+    CURRENT_METHOD = FVC_CNN
 
     SHOULD_TRAIN = True
     SHOULD_TEST = False
-    CURRENT_METHOD = DFC_LBPH
-    CHECK_ALL_IMGS = 0
-    imgs_to_be_checked = 1
-    pattern_extract_genuine = re.compile('([0-9]{5})(?!\_)')
-    pattern_extract_genuine_ids_from_morphed = re.compile(r'([0-9]{5})')
 
-    all_morphed = glob.glob("../biometrix/morphed/*.jpg")
-    all_genuine = glob.glob("../biometrix/genuine/*.png")
+    process_all_imgs = 0
+    IMGS_TO_BE_PROCESSED = 5
 
-    print("Using method: {}".format(CURRENT_METHOD))
+    print("Processing images with method: {}".format(CURRENT_METHOD))
 
     if SHOULD_TRAIN:
-        print("Training...")
-        # get feature vectors for all images pairs
-        data = dispatch(CURRENT_METHOD)
+        print("\tTraining")
 
-        # save vectors to file
-        with open('../models/data/' + CURRENT_METHOD + '_data.json', 'w') as outfile:
-            print("Saving {} data to file...".format(CURRENT_METHOD))
-            json.dump(data, outfile, cls=NumpyEncoder)
+        data_to_be_written = []
 
-    if SHOULD_TEST:
-        print("Testing...")
-        with open('../models/data/' + CURRENT_METHOD + '_data.json', 'r') as infile:
-            print("Loading {} data from file...".format(CURRENT_METHOD))
-            data = json.load(infile)
-            print("Converting data to correct format...")
-            for el in data:
-                el["classification_data"] = np.asarray(el["classification_data"])
+        if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH:
+            print("\t\tProcessing genuine data")
+            data_to_be_written += get_data_to_be_written(process_genuine_singles(), 1)
+            print("\t\tProcessing attack data")
+            data_to_be_written += get_data_to_be_written(process_morphed_singles(), -1)
+        else:
+            print("\t\tProcessing genuine data")
+            data_to_be_written += get_data_to_be_written(process_genuine_pairs(), 1)
+            print("\t\tProcessing attack data")
+            data_to_be_written += get_data_to_be_written(process_morphed_pairs(), -1)
+
+        print("\tWriting data to file (data length: {})".format(len(data_to_be_written)))
+        save_to_file(data_to_be_written)
+
+        print("\tFinished")
+        print("Created file: ../assets/data/{}_data.json".format(CURRENT_METHOD))
+
+    # if SHOULD_TEST:
+    #     print("Testing...")
+    #     with open('../assets/data/' + CURRENT_METHOD + '_data.json', 'r') as infile:
+    #         print("Loading {} data from file...".format(CURRENT_METHOD))
+    #         data = json.load(infile)
+    #         print("Converting data to correct format...")
+    #         for el in data:
+    #             el["classification_data"] = np.asarray(el["classification_data"])

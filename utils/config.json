@@ -1,9 +1,8 @@
 {
   "paths": {
-    "SVM": "../models/SVM_classifier_model.pickle",
-    "faceRecog1": "../models/dlib_face_recognition_resnet_model_v1.dat",
-    "shapePredictor": "../models/shape_predictor_5_face_landmarks.dat",
-    "img": "../img"
+    "SVM": "../assets/models/SVM_classifier_model.pickle",
+    "faceRecog1": "../assets/models/dlib_face_recognition_resnet_model_v1.dat",
+    "shapePredictor": "../assets/models/shape_predictor_5_face_landmarks.dat"
   },
   "preprocessing": {
     "upsampleTimes": 1,
