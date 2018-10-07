@@ -28,6 +28,14 @@ def get_genuine_images(n_images):
     return _get_n_images(n_images, all_genuine)
 
 
+def get_nth_morphed_image(index):
+    return _get_nth_image(index, all_morphed)
+
+
+def get_nth_genuine_image(index):
+    return _get_nth_image(index, all_genuine)
+
+
 def _get_n_images(n_images, collection):
     imgs = []
 
@@ -35,3 +43,7 @@ def _get_n_images(n_images, collection):
         imgs.append(img_utils.load_img_dlib_rgb(img))
 
     return imgs
+
+
+def _get_nth_image(index, collection):
+    return img_utils.load_img_dlib_rgb(collection[index])

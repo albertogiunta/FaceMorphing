@@ -25,6 +25,13 @@ def get_genuine_genuine_pairs(n_images):
     return pairs
 
 
+def get_nth_genuine_image2(index):
+    return _get_nth_image(index, all_genuine)
+
+
+def _get_nth_image(index, collection):
+    return img_utils.load_img_dlib_rgb(collection[index])
+
 if __name__ == '__main__':
     pairs = get_genuine_genuine_pairs(10)
     for pair in pairs:
