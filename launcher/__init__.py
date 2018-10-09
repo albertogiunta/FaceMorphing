@@ -8,6 +8,11 @@ from skimage.util import view_as_blocks
 from featureVectorMerging.differential_comparison import DifferentialComparison
 from utils.config_utils import NumpyEncoder
 
+SVM_LINEAR = "LINEAR_SVM"
+SVM_RBF = "RBF_SVM"
+SVM_POLY = "POLY_SVM"
+SVM_SIGM = "SIGM_SVM"
+
 FVC_CNN = "FVC_CNN"
 FVC_LBPH = "FVC_LBPH"
 
@@ -23,11 +28,8 @@ PPC16_LBPH = "PPC16_LBPH"
 MSPPC_CNN = "MSPPC_CNN"
 MSPPC_LBPH = "MSPPC_LBPH"
 
-
-# data = {
-#     'fv': None,
-#     "cls": None
-# }
+FVC_CNN_TEST = "FVC_CNN_TEST"
+FVC_LBPH_TEST = "FVC_LBPH_TEST"
 
 
 def apply_preproc(*args):
@@ -47,8 +49,7 @@ def apply_cnn(*args):
     feature_vectors = []
 
     for img in args:
-        temp_img = skimage.img_as_ubyte(img)
-        feature_vectors.append(cnn.get_img_descriptor_from_img(temp_img))
+        feature_vectors.append(cnn.get_img_descriptor_from_img(img))
 
     return feature_vectors
 
@@ -115,12 +116,11 @@ def get_patched_lbph_fv(img_pair, grid_size):
 def process_singles(singles):
     result = []
     for i, img in enumerate(singles):
-        if i == 0 or (i + 1) % 10 == 0:
-            print_status(i)
+        print_status(i)
         preprocessed_img = apply_preproc(img)[0]
-        if CURRENT_METHOD == FVC_CNN:
+        if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_CNN_TEST:
             result.append(apply_cnn(preprocessed_img)[0])
-        elif CURRENT_METHOD == FVC_LBPH:
+        elif CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_LBPH_TEST:
             result.append(apply_lbph_to_whole_img(preprocessed_img)[0])
     return result
 
@@ -128,8 +128,7 @@ def process_singles(singles):
 def process_pairs(pairs):
     result = []
     for i, pair in enumerate(pairs):
-        if i == 0 or (i + 1) % 10 == 0:
-            print_status(i)
+        print_status(i)
         preprocessed_pair = apply_preproc(pair[0], pair[1])
         if CURRENT_METHOD == DFC_CNN:
             feature_vectors = apply_cnn(preprocessed_pair[0], preprocessed_pair[1])
@@ -150,10 +149,11 @@ def process_pairs(pairs):
 
 
 def print_status(i):
-    from time import gmtime, strftime
-    if i != 0:
-        i += 1
-    print("\t\t\t\t{} - {}".format(i, strftime("%Y-%m-%d %H:%M:%S", gmtime())))
+    if i == 0 or (i + 1) % 10 == 0:
+        from time import gmtime, strftime
+        if i != 0:
+            i += 1
+        print("\t\t\t\t{} - {}".format(i, strftime("%Y-%m-%d %H:%M:%S", gmtime())))
 
 
 def process_morphed_singles():
@@ -187,7 +187,7 @@ def extract_data_with_current_method():
 
     data_to_be_written = []
 
-    if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH:
+    if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_CNN_TEST or CURRENT_METHOD == FVC_LBPH_TEST:
         print("\t\tProcessing genuine data")
         data_to_be_written.append(get_data_to_be_written(process_genuine_singles(), 1))
         print("\t\tProcessing attack data")
@@ -224,7 +224,7 @@ def train_svm_with_current_method():
     print("Training with {}".format(CURRENT_METHOD))
     with open('../assets/data/' + CURRENT_METHOD + '_data.json', 'r') as infile:
         data = json.load(infile)
-        print("\tLoaded data from file...")
+        print("\tLoaded data from file")
 
         fvs = []
         clss = []
@@ -233,48 +233,56 @@ def train_svm_with_current_method():
             fvs.append(el['fv'])
             clss.append(el['cls'])
 
-        from sklearn.model_selection import train_test_split
-        X_train, X_test, y_train, y_test = train_test_split(fvs, clss, test_size=0.70)
+        print("\tTrain/Test data structures created - {} samples loaded".format(len(fvs)))
 
-        from SVM.svm_classification import SVMClassifier
-        svm = SVMClassifier(CURRENT_METHOD)
-        svm.train(X_train, y_train)
+        from sklearn.model_selection import cross_validate
+        from sklearn import svm
+        def get_linear_SVM():
+            print("\t\tSVM with Linear SVM")
+            return svm.LinearSVC(C=0.4, verbose=0, max_iter=4000, random_state=42)
+            # return svm.SVC(kernel='linear', C=1, verbose=0, max_iter=100000)
 
-        print(svm.get_score(X_test, y_test))
+        def get_RBF_SVM():
+            print("\t\tSVM with RBF kernel")
+            return svm.SVC(kernel='rbf', verbose=False, gamma='scale', random_state=42)
+
+        def get_poly_SVM():
+            print("\t\tSVM with Polynomial kernel")
+            return svm.SVC(kernel='poly', verbose=False, gamma='scale', random_state=42)
+
+        def get_sigm_SVM():
+            print("\t\tSVM with Sigmoid kernel")
+            return svm.SVC(kernel='sigmoid', verbose=False, gamma='scale', random_state=42)
+
+        def cross_validate_with(svm, cv, verbose):
+            return cross_validate(svm, fvs, clss, cv=cv, return_train_score=False, verbose=verbose, n_jobs=5,
+                                  return_estimator=True)['test_score']
+
+        print("\tTraining")
+        cv_score = None
+        from sklearn.model_selection import cross_val_score
+        if CURRENT_SVM == SVM_RBF:
+            cv_score = cross_val_score(get_RBF_SVM(), fvs, clss, cv=5)
+        elif CURRENT_SVM == SVM_LINEAR:
+            cv_score = cross_val_score(get_linear_SVM(), fvs, clss, cv=5)
+        elif CURRENT_SVM == SVM_POLY:
+            cv_score = cross_val_score(get_poly_SVM(), fvs, clss, cv=5)
+        elif CURRENT_SVM == SVM_SIGM:
+            cv_score = cross_val_score(get_sigm_SVM(), fvs, clss, cv=5)
+        print("{} - {}".format(CURRENT_METHOD, CURRENT_SVM))
+        print("Accuracy: %0.2f (+/- %0.2f)" % (cv_score.mean(), cv_score.std() * 2))
 
 
-# def predict_result():
-#     from SVM.svm_classification import SVMClassifier
-#     svm = SVMClassifier(CURRENT_METHOD)
-#
-#     from launcher.biometix_runner import get_nth_morphed_image, get_nth_genuine_image
-#     from launcher.feret_runner import get_nth_genuine_image2
-#     interval = 15
-#     test_morphed_img = get_nth_morphed_image(IMGS_TO_BE_PROCESSED + interval)
-#     test_genuine_img = get_nth_genuine_image(IMGS_TO_BE_PROCESSED + interval)
-#     test_genuine2_img = get_nth_genuine_image2(IMGS_TO_BE_PROCESSED + interval)
-#
-#     # img = test_morphed_img
-#     img = test_genuine_img
-#     # img = test_genuine2_img
-#
-#     test_preproc_img = apply_preproc(img)[0]
-#     test_fv = None
-#     if CURRENT_METHOD == FVC_CNN:
-#         test_fv = apply_cnn(test_preproc_img)[0]
-#     elif CURRENT_METHOD == FVC_LBPH:
-#         test_fv = apply_lbph_to_whole_img(test_preproc_img)[0]
-#
-#     result = svm.predict_class(test_fv)
-#     print(result)
+#         apcer - attack presentation classification error rate
+#         bpcer - bonafide presentation classification error rate: proportion of bona fide presentations incorrectly classified as morphed face attacks
 
 
 if __name__ == '__main__':
     process_all_imgs = 0
     IMGS_TO_BE_PROCESSED = 900
 
-    CURRENT_METHOD = FVC_LBPH
+    CURRENT_METHOD = PPC16_LBPH
+    CURRENT_SVM = SVM_RBF
+    # extract_data_with_current_method()
 
-    extract_data_with_current_method()
-    # train_svm_with_current_method()
-    # predict_result()
+    train_svm_with_current_method()

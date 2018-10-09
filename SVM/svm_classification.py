@@ -8,19 +8,10 @@ from sklearn import svm
 class SVMClassifier:
 
     def __init__(self, model_name):
-        self.svm = svm.SVC(kernel='rbf')
+        # self.svm = svm.SVC(kernel='rbf')
+        self.svm = svm.LinearSVC()
         self.classifier = None
         self.model_name = model_name
-
-    # For binary classification, the classes labels should all be either +1 or -1.
-
-    # model_name can be:
-
-    # FVC_CNN, DFC_CNN, MSPPC_CNN
-    # PPC4_CNN, PPC8_CNN, PPC12_CNN, PPC16_CNN
-
-    # FVC_LBPH, DFC_LBPH, MSPPC_LBPH
-    # PPC4_LBPH, PPC8_LBPH, PPC12_LBPH, PPC16_LBPH
 
     def train(self, feature_vectors, classes):
         self.classifier = self.svm.fit(feature_vectors, classes)

@@ -30,7 +30,6 @@ class CNNFeatureVectorExtraction(AbstractFVExtraction):
 
         for box_index, bounding_box in enumerate(faces_bounding_boxes):
             shape = self.shape_predictor(self.img, bounding_box)
-            # img_utils.show_img_dlib(self.img, bounding_box, shape)
             feature_vector = np.array(self.face_rec_model.compute_face_descriptor(self.img, shape, self.num_jitters))
             return feature_vector
 

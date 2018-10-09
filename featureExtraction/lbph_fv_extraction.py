@@ -35,7 +35,6 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         return self._get_img_descriptor()
 
     def _get_img_descriptor(self, use_img_as_patch):
-        # img_utils.show_img_skimage(self.img)
 
         feature_vector = np.array([])
         lbp_img = sk.local_binary_pattern(self.img, self.neighbours, self.radius, method=self.nbp_method_name)

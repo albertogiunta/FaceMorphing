@@ -3,7 +3,6 @@
 #   pyramid, and sliding window detection scheme.
 
 import dlib
-from skimage.transform import resize
 
 from utils import config_utils
 from utils import img_utils
@@ -18,6 +17,8 @@ class Preprocessing:
         self.img = None
         self.upsample_times = self.conf["upsampleTimes"]
         self.img_square_size = self.conf["imgSquareSize"]
+        self.anti_aliasing = bool(self.conf["antiAliasing"])
+        self.resize_mode = self.conf["resizeMode"]
         self.frontal_face_detector = models_utils.get_frontal_face_detector()
         self.shape_predictor = models_utils.get_shape_predictor()
 
@@ -45,12 +46,10 @@ class Preprocessing:
         for detection in faces_bounding_boxes:
             faces.append(self.shape_predictor(self.img, detection))
 
-        img = dlib.get_face_chip(self.img, faces[0], size=self.img_square_size)
-        # img_utils.show_img_dlib(img)
-        # img = dlib.get_face_chips(img, faces, size=246)
-        # img_utils.show_img_dlib(img[0])
-
-        return resize(img, (self.img_square_size, self.img_square_size), anti_aliasing=True, mode="constant")
+        new_img = dlib.get_face_chip(self.img, faces[0], size=self.img_square_size)
+        # new_img = resize(img, (self.img_square_size, self.img_square_size), anti_aliasing=self.anti_aliasing, mode=self.resize_mode)
+        # img_utils.show_img_skimage(new_img)
+        return new_img
 
 
 if __name__ == '__main__':
