@@ -302,6 +302,12 @@ def calculate_bpcer_for_current_method():
     get_svm_classifier().get_bpcer(feature_vectors, classes)
 
 
+def calculate_far():
+    feature_vectors, classes = load_data_for_current_method()
+    print("FAR/FRR for method {}".format(CURRENT_METHOD))
+    get_svm_classifier().get_frr(feature_vectors, classes)
+
+
 def find_false_negatives():
     feature_vectors, classes = load_data_for_current_method()
     print("APCER/BPCER for method {}".format(CURRENT_METHOD))
@@ -314,7 +320,8 @@ def execute_f_for_all_methods():
     for method in methods:
         global CURRENT_METHOD
         CURRENT_METHOD = method
-        calculate_bpcer_for_current_method()
+        # calculate_bpcer_for_current_method()
+        calculate_far()
         print()
         print()
 
@@ -326,12 +333,13 @@ if __name__ == '__main__':
     IMGS_TO_BE_PROCESSED = 900
 
     global CURRENT_METHOD
-    CURRENT_METHOD = DFC_LBPH
+    CURRENT_METHOD = DFC_CNN
     CURRENT_SVM = SVM_LINEAR
 
-    # extract_data_with_current_method()
+    extract_data_with_current_method()
     find_and_save_best_clf_for_current_method()
-    calculate_bpcer_for_current_method()
+    # calculate_bpcer_for_current_method()
+    calculate_far()
 
     # find_false_negatives()
-    # execute_f_for_all_methods()
+    execute_f_for_all_methods()

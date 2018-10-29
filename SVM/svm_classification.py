@@ -111,6 +111,18 @@ class SVMClassifier:
         print()
         self._print_apcer_bpcer_table(bpcer)
 
+    def get_frr(self, feature_vectors, classes):
+        self._load_classifier()
+        classes = [0 if el == -1 else el for el in classes]
+        X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
+        y_probs = self.clf.predict_proba(X_test)
+
+        from SVM.metrics_utils import compute_frr_at_given_far_from_probabilities
+
+        compute_frr_at_given_far_from_probabilities(y_probs, 0.001, y_test, 1)
+        print()
+
+
     def find_false_negatives(self, feature_vectors, classes):
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
         self._load_classifier()
