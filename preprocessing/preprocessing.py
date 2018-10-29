@@ -38,7 +38,7 @@ class Preprocessing:
         if len(faces_bounding_boxes) != 1:
             print("ERROR: There should be only 1 face per image, instead there are {} in image {}".format(
                 len(faces_bounding_boxes), self.img_path))
-            exit()
+            return None
 
         # img_utils.show_img_dlib(img, bounding_box=faces_bounding_boxes)
 

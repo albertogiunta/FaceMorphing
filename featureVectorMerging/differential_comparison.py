@@ -12,6 +12,10 @@ class DifferentialComparison:
         return reference_fv - bonafide_fv
 
     @staticmethod
+    def calculate_euclidean_distance_from_binary_vector(binary_vector):
+        return np.linalg.norm(binary_vector[0] - binary_vector[1])
+
+    @staticmethod
     def calculate_euclidean_distance(fv_a, fv_b):
         return np.linalg.norm(fv_a - fv_b)
 

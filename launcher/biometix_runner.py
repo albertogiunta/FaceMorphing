@@ -6,10 +6,11 @@ from utils import img_utils
 all_morphed = sorted(glob.glob("../assets/db/biometix/morphed/*.jpg"))
 all_genuine = sorted(glob.glob("../assets/db/biometix/genuine/*.png"))
 
+pattern_extract_genuine_ids_from_morphed = re.compile(r'([0-9]{5})')
+
 
 def get_morphed_genuine_pairs(n_images):
     pairs = []
-    pattern_extract_genuine_ids_from_morphed = re.compile(r'([0-9]{5})')
 
     for img_path in all_morphed[0:n_images]:
         genuine_id = re.findall(pattern_extract_genuine_ids_from_morphed, img_path)[0]
@@ -30,6 +31,16 @@ def get_genuine_images(n_images):
 
 def get_nth_morphed_image(index):
     return _get_nth_image(index, all_morphed)
+
+
+def get_nth_morphed_genuine_pair(index):
+    morphed_path = all_morphed[index]
+    genuine_id = re.findall(pattern_extract_genuine_ids_from_morphed, morphed_path)[0]
+    pattern_current_genuine_id = re.compile('(.+' + genuine_id + '.+)')
+    genuine_path = next(x for x in all_genuine if pattern_current_genuine_id.search(x) is not None)
+    print(morphed_path)
+    print(genuine_path)
+    return morphed_path, genuine_path
 
 
 def get_nth_genuine_image(index):

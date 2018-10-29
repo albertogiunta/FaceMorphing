@@ -25,6 +25,18 @@ def get_genuine_genuine_pairs(n_images):
     return pairs
 
 
+def get_genuine_images(n_images):
+    imgs = []
+
+    for i, img_path in enumerate(all_genuine):
+        imgs.append(img_utils.load_img_dlib_rgb(img_path))
+
+        if len(imgs) >= n_images:
+            return imgs
+
+    return imgs
+
+
 def get_nth_genuine_image2(index):
     return _get_nth_image(index, all_genuine)
 

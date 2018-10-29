@@ -11,7 +11,7 @@
     "resizeMode": "constant"
   },
   "FVExtractionCnn": {
-    "upsampleTimes": 1,
+    "upsampleTimes": 2,
     "numJitters": 0
   },
   "FVExtractionLbph": {

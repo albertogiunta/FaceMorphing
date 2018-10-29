@@ -2,6 +2,8 @@ import glob
 import os
 
 import dlib
+import imageio
+from PIL import ImageEnhance
 from skimage import io
 from skimage.transform import resize
 
@@ -32,7 +34,7 @@ def load_imgs_in_folder(folder):
 def load_img_skimage(img_path):
     from utils import config_utils
     size = config_utils.get_config("preprocessing")["imgSquareSize"]
-    return resize(io.imread(img_path), (size, size), anti_aliasing=True, mode="constant")
+    return resize(imageio.imread(img_path, pilmode='LA'), (size, size), anti_aliasing=True, mode="constant")
 
 
 def load_img_dlib_rgb(img_path):
@@ -40,7 +42,12 @@ def load_img_dlib_rgb(img_path):
 
 
 def load_img_dlib_grayscale(img_path):
-    return dlib.load_grayscale_image(img_path)
+    from PIL import Image
+    import numpy
+    img = ImageEnhance.Color(Image.open(img_path)).enhance(0)
+    img = numpy.array(img, dtype=numpy.uint8)
+    return img
+
 
 
 def show_img_skimage(image):

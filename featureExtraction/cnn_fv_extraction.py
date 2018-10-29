@@ -1,6 +1,7 @@
 import numpy as np
 
 from featureExtraction.abstract_extraction import AbstractFVExtraction
+from featureVectorMerging.differential_comparison import DifferentialComparison
 from utils import config_utils
 from utils import img_utils
 from utils import models_utils
@@ -37,9 +38,11 @@ class CNNFeatureVectorExtraction(AbstractFVExtraction):
 if __name__ == '__main__':
     face_rec = CNNFeatureVectorExtraction()
     feature_vector = face_rec.get_img_descriptor_from_path(
-        img_utils.compile_img_path(img_name="00002_930831_fa.png", img_folder="biometix/genuine"))
-    print(feature_vector)
+        img_utils.compile_img_path(img_name="M_00010_00188.jpg", img_folder="assets/db/biometix/morphed"))
+    # print(feature_vector)
 
-    # feature_vector2 = face_rec.get_img_descriptor_from_path(
-    #     img_utils.compile_img_path(img_name="M_00002_00320.jpg", img_folder="biometix/morphed"))
+    feature_vector2 = face_rec.get_img_descriptor_from_path(
+        img_utils.compile_img_path(img_name="00010_930831_fa.png", img_folder="assets/db/biometix/genuine"))
     # print(feature_vector2)
+
+    print(DifferentialComparison.calculate_euclidean_distance(feature_vector, feature_vector2))
