@@ -16,9 +16,11 @@ SVM_POLY = "POLY_SVM"
 SVM_SIGM = "SIGM_SVM"
 
 FVC_CNN = "FVC_CNN"
+FVC_CNN_OF = "FVC_CNN_OF"
 FVC_LBPH = "FVC_LBPH"
 
 DFC_CNN = "DFC_CNN"
+DFC_CNN_OF = "DFC_CNN_OF"
 DFC_LBPH = "DFC_LBPH"
 
 PPC4_LBPH = "PPC4_LBPH"
@@ -119,7 +121,8 @@ def process_singles(singles):
     result = []
     for i, img in enumerate(singles):
         print_status(i)
-        new_img = apply_preproc(img)
+        # new_img = apply_preproc(img)
+        new_img = [img]
         if len(new_img) > 0:
             preprocessed_img = new_img[0]
             if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_CNN_TEST:
@@ -127,36 +130,6 @@ def process_singles(singles):
             elif CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_LBPH_TEST:
                 result.append(apply_lbph_to_whole_img(preprocessed_img)[0])
     return result
-
-
-def process_pairs_parallel(pairs):
-    for i, pair in enumerate(pairs):
-        pairs[i] = (pairs[i][0], pairs[i][1], i)
-    import multiprocessing as mp
-    worker_pool = mp.Pool(mp.cpu_count() * 2)
-    jobs = pairs
-    worker_pool.map_async(process_pairs_for_parallel, jobs)
-    worker_pool.close()
-    worker_pool.join()
-    return result
-
-
-def process_pairs_for_parallel(pair):
-    preprocessed_pair = apply_preproc(pair[0], pair[1])
-    if CURRENT_METHOD == DFC_CNN:
-        feature_vectors = apply_cnn(preprocessed_pair[0], preprocessed_pair[1])
-        result.append(DifferentialComparison.get_differential_fv_from_vector(feature_vectors))
-    elif CURRENT_METHOD == DFC_LBPH:
-        feature_vectors = apply_lbph_to_whole_img(preprocessed_pair[0], preprocessed_pair[1])
-        result.append(DifferentialComparison.get_differential_fv_from_vector(feature_vectors))
-    elif CURRENT_METHOD == PPC4_LBPH:
-        result.append(get_patched_lbph_fv(preprocessed_pair, 4))
-    elif CURRENT_METHOD == PPC8_LBPH:
-        result.append(get_patched_lbph_fv(preprocessed_pair, 8))
-    elif CURRENT_METHOD == PPC12_LBPH:
-        result.append(get_patched_lbph_fv(preprocessed_pair, 12))
-    elif CURRENT_METHOD == PPC16_LBPH:
-        result.append(get_patched_lbph_fv(preprocessed_pair, 16))
 
 
 def process_pairs(pairs):
@@ -180,7 +153,6 @@ def process_pairs(pairs):
             result.append(get_patched_lbph_fv(preprocessed_pair, 12))
         elif CURRENT_METHOD == PPC16_LBPH:
             result.append(get_patched_lbph_fv(preprocessed_pair, 16))
-
     return result
 
 
@@ -193,32 +165,47 @@ def print_status(i):
 
 
 def process_morphed_singles():
-    from launcher.biometix_runner import get_morphed_images
-    imgs = get_morphed_images(IMGS_TO_BE_PROCESSED)
-    return process_singles(imgs)
+    if CURRENT_METHOD == FVC_CNN_OF:
+        from launcher.openface_runner import biometix_morphed_fv
+        fvs = biometix_morphed_fv[0:IMGS_TO_BE_PROCESSED]
+        return fvs
+    else:
+        from launcher.biometix_runner import get_morphed_images
+        imgs = get_morphed_images(IMGS_TO_BE_PROCESSED)
+        return process_singles(imgs)
 
 
 def process_genuine_singles():
-    # from launcher.biometix_runner import get_genuine_images
-    # imgs = get_genuine_images(IMGS_TO_BE_PROCESSED)
-    from launcher.feret_runner import get_genuine_images
-    imgs = get_genuine_images(IMGS_TO_BE_PROCESSED)
-    return process_singles(imgs)
+    if CURRENT_METHOD == FVC_CNN_OF:
+        from launcher.openface_runner import feret_fv
+        fvs = feret_fv[0:IMGS_TO_BE_PROCESSED]
+        return fvs
+    else:
+        from launcher.feret_runner import get_genuine_images
+        imgs = get_genuine_images(IMGS_TO_BE_PROCESSED)
+        return process_singles(imgs)
 
 
 def process_morphed_pairs():
-    from launcher.biometix_runner import get_morphed_genuine_pairs
-    pairs = get_morphed_genuine_pairs(IMGS_TO_BE_PROCESSED)
-    return process_pairs(pairs)
-    # return multiprocess_pairs(pairs)
+    if CURRENT_METHOD == DFC_CNN_OF:
+        from launcher.openface_runner import get_morphed_genuine_diff_fv
+        morphed_pairs = get_morphed_genuine_diff_fv(IMGS_TO_BE_PROCESSED)
+        return morphed_pairs
+    else:
+        from launcher.biometix_runner import get_morphed_genuine_pairs
+        pairs = get_morphed_genuine_pairs(IMGS_TO_BE_PROCESSED)
+        return process_pairs(pairs)
 
 
 def process_genuine_pairs():
-    from launcher.feret_runner import get_genuine_genuine_pairs
-    pairs = get_genuine_genuine_pairs(IMGS_TO_BE_PROCESSED)
-    # pairs = get_genuine_genuine_pairs(IMGS_TO_BE_PROCESSED*2)
-    return process_pairs(pairs)
-    # return multiprocess_pairs(pairs)
+    if CURRENT_METHOD == DFC_CNN_OF:
+        from launcher.openface_runner import get_genuine_genuine_diff_fv
+        genuine_pairs = get_genuine_genuine_diff_fv(IMGS_TO_BE_PROCESSED)
+        return genuine_pairs
+    else:
+        from launcher.feret_runner import get_genuine_genuine_pairs
+        pairs = get_genuine_genuine_pairs(IMGS_TO_BE_PROCESSED)
+        return process_pairs(pairs)
 
 
 def extract_data_with_current_method():
@@ -228,16 +215,16 @@ def extract_data_with_current_method():
 
     data_to_be_written = []
 
-    if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_CNN_TEST or CURRENT_METHOD == FVC_LBPH_TEST:
+    if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_CNN_OF or CURRENT_METHOD == FVC_CNN_TEST or CURRENT_METHOD == FVC_LBPH_TEST:
         print("\t\tProcessing genuine data")
         data_to_be_written.append(get_data_to_be_written(process_genuine_singles(), 1))
         print("\t\tProcessing attack data")
-        data_to_be_written.append(get_data_to_be_written(process_morphed_singles(), -1))
+        data_to_be_written.append(get_data_to_be_written(process_morphed_singles(), 0))
     else:
         print("\t\tProcessing genuine data")
         data_to_be_written.append(get_data_to_be_written(process_genuine_pairs(), 1))
         print("\t\tProcessing attack data")
-        data_to_be_written.append(get_data_to_be_written(process_morphed_pairs(), -1))
+        data_to_be_written.append(get_data_to_be_written(process_morphed_pairs(), 0))
 
     data_to_be_written = np.array(data_to_be_written).flatten()
 
@@ -315,12 +302,10 @@ def find_false_negatives():
 
 
 def execute_f_for_all_methods():
-    # methods = [FVC_LBPH, FVC_CNN, DFC_LBPH, DFC_CNN, PPC4_LBPH, PPC8_LBPH, PPC12_LBPH, PPC16_LBPH]
     methods = [FVC_LBPH, FVC_CNN, DFC_LBPH, DFC_CNN, PPC4_LBPH, PPC8_LBPH, PPC12_LBPH, PPC16_LBPH]
     for method in methods:
         global CURRENT_METHOD
         CURRENT_METHOD = method
-        # calculate_bpcer_for_current_method()
         calculate_far()
         print()
         print()
@@ -333,13 +318,12 @@ if __name__ == '__main__':
     IMGS_TO_BE_PROCESSED = 900
 
     global CURRENT_METHOD
-    CURRENT_METHOD = DFC_CNN
+    CURRENT_METHOD = DFC_LBPH
     CURRENT_SVM = SVM_LINEAR
 
     extract_data_with_current_method()
     find_and_save_best_clf_for_current_method()
-    # calculate_bpcer_for_current_method()
     calculate_far()
 
     # find_false_negatives()
-    execute_f_for_all_methods()
+    # execute_f_for_all_methods()

@@ -20,8 +20,8 @@ class SVMClassifier:
 
         # Set the parameters for cross-validation
         tuned_parameters = [
-            # {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
-            {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]}
+            {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
+            {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]},
             # {'kernel': ['poly'], 'C': [1, 10, 100, 1000], 'degree': [3, 4, 5], 'gamma': [1e-3, 1e-4]}
         ]
 
@@ -51,8 +51,7 @@ class SVMClassifier:
     def get_bpcer(self, feature_vectors, classes):
         # apcer - attack presentation classification error rate: proportion of morphed presentations incorrectly classified as bona fide
         # bpcer - bonafide presentation classification error rate: proportion of bona fide presentations incorrectly classified as morphed face attacks
-        apcer = [0.001, 0.003, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
-        # apcer = [0.05, 0.1]
+        apcer = [0.05, 0.1]
         bpcer = []
 
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
@@ -70,7 +69,7 @@ class SVMClassifier:
         # precision and recall values at different threshold values
         precisions, _, thresholds = precision_recall_curve(y_test, y_scores)
         # total number of morphed images in test group
-        num_morphed = len([el for el in y_test if el == -1])
+        num_morphed = len([el for el in y_test if (el == -1 or el == 0)])
 
         # plt.plot(precisions)
         # plt.show()
@@ -95,7 +94,7 @@ class SVMClassifier:
             min_threshold = thresholds[approx_precision_index] + sys.float_info.epsilon
 
             # array of predictions adjusted on the newly found minimum threshold
-            y_pred_adjusted = [1 if y >= min_threshold else -1 for y in y_scores]
+            y_pred_adjusted = [1 if y >= min_threshold else 0 for y in y_scores]
 
             ############################################################################################################
             conf_matrix = confusion_matrix(y_test, y_pred_adjusted)
@@ -112,15 +111,23 @@ class SVMClassifier:
         self._print_apcer_bpcer_table(bpcer)
 
     def get_frr(self, feature_vectors, classes):
+        from SVM.metrics_utils import compute_frr_at_given_far_from_probabilities
+
         self._load_classifier()
         classes = [0 if el == -1 else el for el in classes]
+
+        fars = [0.05, 0.1]
+        frrs = []
+
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
         y_probs = self.clf.predict_proba(X_test)
 
-        from SVM.metrics_utils import compute_frr_at_given_far_from_probabilities
+        for far in fars:
+            frr, _ = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test, 1)
+            frrs.append(frr)
 
-        compute_frr_at_given_far_from_probabilities(y_probs, 0.001, y_test, 1)
-        print()
+        self._print_apcer_bpcer_table(frrs)
+        return
 
 
     def find_false_negatives(self, feature_vectors, classes):
@@ -134,7 +141,7 @@ class SVMClassifier:
             curr_cls = y_test[i]
             curr_index = feature_vectors.index(curr_fv)
 
-            if curr_cls == -1:
+            if curr_cls == -1 or curr_cls == 0:
                 curr_index -= num_genuine_train
                 ok_pred = self.clf.predict([curr_fv]) == curr_cls
                 if not ok_pred:
@@ -156,11 +163,10 @@ class SVMClassifier:
         return array[idx]
 
     def adjusted_classes(self, y_scores, t):
-        return [1 if y >= t else -1 for y in y_scores]
+        return [1 if y >= t else 0 for y in y_scores]
 
     def _print_apcer_bpcer_table(self, bpcer):
-        header = ["0.10%", "0.30%", "0.50%", "1.00%", "2.00%", "3.00%", "5.00%", "10.00%"]
-        # header = ["5.00%", "10.00%"]
+        header = ["5.00%", "10.00%"]
         rows = [bpcer]
         print(tabulate(rows, headers=header, floatfmt=".2f"))
 

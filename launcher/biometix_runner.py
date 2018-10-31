@@ -3,8 +3,11 @@ import re
 
 from utils import img_utils
 
-all_morphed = sorted(glob.glob("../assets/db/biometix/morphed/*.jpg"))
-all_genuine = sorted(glob.glob("../assets/db/biometix/genuine/*.png"))
+# all_morphed = sorted(glob.glob("../assets/db/biometix/morphed/*.jpg"))
+# all_genuine = sorted(glob.glob("../assets/db/biometix/genuine/*.png"))
+
+all_morphed = sorted(glob.glob("../assets/db/aligned/aligned-biometix-morphed/imgs/*.png"))
+all_genuine = sorted(glob.glob("../assets/db/aligned/aligned-biometix-genuine/imgs/*.png"))
 
 pattern_extract_genuine_ids_from_morphed = re.compile(r'([0-9]{5})')
 

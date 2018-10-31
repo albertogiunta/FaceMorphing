@@ -6,19 +6,19 @@
   },
   "preprocessing": {
     "upsampleTimes": 1,
-    "imgSquareSize": 256,
+    "imgSquareSize": 96,
     "antiAliasing": "True",
     "resizeMode": "constant"
   },
   "FVExtractionCnn": {
-    "upsampleTimes": 2,
+    "upsampleTimes": 1,
     "numJitters": 0
   },
   "FVExtractionLbph": {
     "neighbours": 8,
     "radius": 1,
     "gridSize": 8,
-    "imgSize": 256,
+    "imgSize": 96,
     "nRows": 8,
     "nCols": 8,
     "lbpMethodName": "uniform",

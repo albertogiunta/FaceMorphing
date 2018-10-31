@@ -3,7 +3,8 @@ import re
 
 from utils import img_utils
 
-all_genuine = sorted(glob.glob("../assets/db/feret/*.bmp"))
+# all_genuine = sorted(glob.glob("../assets/db/feret/*.bmp"))
+all_genuine = sorted(glob.glob("../assets/db/aligned/aligned-feret/imgs/*.png"))
 
 
 def get_genuine_genuine_pairs(n_images):
@@ -27,7 +28,6 @@ def get_genuine_genuine_pairs(n_images):
 
 def get_genuine_images(n_images):
     imgs = []
-
     for i, img_path in enumerate(all_genuine):
         imgs.append(img_utils.load_img_dlib_rgb(img_path))
 

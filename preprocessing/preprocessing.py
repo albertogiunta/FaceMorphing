@@ -47,8 +47,6 @@ class Preprocessing:
             faces.append(self.shape_predictor(self.img, detection))
 
         new_img = dlib.get_face_chip(self.img, faces[0], size=self.img_square_size)
-        # new_img = resize(img, (self.img_square_size, self.img_square_size), anti_aliasing=self.anti_aliasing, mode=self.resize_mode)
-        # img_utils.show_img_skimage(new_img)
         return new_img
 
 
