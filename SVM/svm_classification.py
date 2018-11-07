@@ -10,25 +10,25 @@ from tabulate import tabulate
 
 class SVMClassifier:
 
-    def __init__(self, model_name, svm_model):
+    def __init__(self, model_name, current_dim, current_align):
         self.clf = None
         self.model_name = model_name
+        self.current_dim = current_dim
+        self.current_align = current_align
 
     def grid_search_cross_val(self, feature_vectors, classes):
         from sklearn.model_selection import train_test_split
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
 
-        # Set the parameters for cross-validation
         tuned_parameters = [
             {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
-            {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]},
+            {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]}
             # {'kernel': ['poly'], 'C': [1, 10, 100, 1000], 'degree': [3, 4, 5], 'gamma': [1e-3, 1e-4]}
         ]
 
         scores = ['recall']
 
         for score in scores:
-            # print("# Tuning hyper-parameters for %s" % score)
             from sklearn.model_selection import GridSearchCV
             from sklearn.svm import SVC
             clf = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5, scoring='%s_macro' % score)
@@ -37,8 +37,8 @@ class SVMClassifier:
             print("Best parameters set found:")
             print(clf.best_params_)
             print()
-            self.model_name = self.model_name + "-C_" + str(clf.best_params_['C']) + "-kernel_" + clf.best_params_[
-                'kernel']
+            self.model_name = self.model_name + "_" + self.current_dim + "_" + self.current_align + "_" + \
+                              str(clf.best_params_['C']) + "_" + clf.best_params_['kernel']
             self.clf = clf.best_estimator_
             self._save_classifier()
             y_pred = self.clf.predict(X_test)
@@ -116,19 +116,21 @@ class SVMClassifier:
         self._load_classifier()
         classes = [0 if el == -1 else el for el in classes]
 
+
         fars = [0.05, 0.1]
         frrs = []
 
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
         y_probs = self.clf.predict_proba(X_test)
 
+        print("Score: {}".format(self.clf.score(X_test, y_test)))
+
         for far in fars:
             frr, _ = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test, 1)
-            frrs.append(frr)
+            frrs.append(str(round(frr * 100, 2)) + "%")
 
         self._print_apcer_bpcer_table(frrs)
         return
-
 
     def find_false_negatives(self, feature_vectors, classes):
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
@@ -177,4 +179,6 @@ class SVMClassifier:
     def _load_classifier(self):
         if self.clf is None:
             import glob
-            self.clf = pickle.load(open(glob.glob("../assets/svm/" + self.model_name + "*.pickle")[0], 'rb'))
+            self.clf = pickle.load(open(glob.glob(
+                "../assets/svm/" + self.model_name + "_" + self.current_dim + "_" + self.current_align + "_" + "*.pickle")[
+                                            0], 'rb'))

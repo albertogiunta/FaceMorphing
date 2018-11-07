@@ -24,6 +24,7 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
 
     def get_img_descriptor_from_img(self, img):
         self.img = img
+        self.img_size = len(img)
         return self._get_img_descriptor(False)
 
     def get_img_descriptor_from_patch(self, patch):

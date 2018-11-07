@@ -6,7 +6,7 @@
   },
   "preprocessing": {
     "upsampleTimes": 1,
-    "imgSquareSize": 96,
+    "imgSquareSize": 256,
     "antiAliasing": "True",
     "resizeMode": "constant"
   },
@@ -18,7 +18,7 @@
     "neighbours": 8,
     "radius": 1,
     "gridSize": 8,
-    "imgSize": 96,
+    "imgSize": 256,
     "nRows": 8,
     "nCols": 8,
     "lbpMethodName": "uniform",

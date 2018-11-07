@@ -67,17 +67,25 @@ python setup.py install
 
 ./models/get-models.sh
 
-python ./util/align-dlib.py ../assets/db/biometix/morphed/ align outerEyesAndNose ../assets/db/aligned/aligned-biometix-morphed/imgs --size 96
-python ./util/align-dlib.py ../assets/db/biometix/genuine/ align outerEyesAndNose ../assets/db/aligned/aligned-biometix-genuine/imgs --size 96
-python ./util/align-dlib.py ../assets/db/feret-jpg/ align outerEyesAndNose ../assets/db/aligned/aligned-feret/imgs --size 96
+96eyesnose
+python ./util/align-dlib.py ../assets/db/original/biometix-morphed/imgs/ align outerEyesAndNose ../assets/db/96eyesnose/biometix-morphed/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyesnose/biometix-morphed-csv-rep -data ../assets/db/96eyesnose/biometix-morphed
+python ./util/align-dlib.py ../assets/db/original/biometix-genuine/imgs/ align outerEyesAndNose ../assets/db/96eyesnose/biometix-genuine/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyesnose/biometix-genuine-csv-rep -data ../assets/db/96eyesnose/biometix-genuine
+python ./util/align-dlib.py ../assets/db/original/feret-genuine/imgs/ align outerEyesAndNose ../assets/db/96eyesnose/feret-genuine/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyesnose/feret-genuine-csv-rep -data ../assets/db/96eyesnose/feret-genuine
 
+256eyesnose
+python ./util/align-dlib.py ../assets/db/original/biometix-morphed/imgs/ align outerEyesAndNose ../assets/db/256eyesnose/biometix-morphed/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyesnose/biometix-morphed-csv-rep -data ../assets/db/256eyesnose/biometix-morphed
+python ./util/align-dlib.py ../assets/db/original/biometix-genuine/imgs/ align outerEyesAndNose ../assets/db/256eyesnose/biometix-genuine/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyesnose/biometix-genuine-csv-rep -data ../assets/db/256eyesnose/biometix-genuine
+python ./util/align-dlib.py ../assets/db/original/feret-genuine/imgs/ align outerEyesAndNose ../assets/db/256eyesnose/feret-genuine/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyesnose/feret-genuine-csv-rep -data ../assets/db/256eyesnose/feret-genuine
 
+96eyeslip
+python ./util/align-dlib.py ../assets/db/original/biometix-morphed/imgs/ align innerEyesAndBottomLip ../assets/db/96eyeslip/biometix-morphed/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyeslip/biometix-morphed-csv-rep -data ../assets/db/96eyeslip/biometix-morphed
+python ./util/align-dlib.py ../assets/db/original/biometix-genuine/imgs/ align innerEyesAndBottomLip ../assets/db/96eyeslip/biometix-genuine/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyeslip/biometix-genuine-csv-rep -data ../assets/db/96eyeslip/biometix-genuine
+python ./util/align-dlib.py ../assets/db/original/feret-genuine/imgs/ align innerEyesAndBottomLip ../assets/db/96eyeslip/feret-genuine/imgs --size 96 && luajit ./batch-represent/main.lua -outDir ../assets/db/96eyeslip/feret-genuine-csv-rep -data ../assets/db/96eyeslip/feret-genuine
 
-luajit ./batch-represent/main.lua -outDir ../assets/data-of/biometix-morphed -data ../assets/db/aligned/aligned-biometix-morphed
-luajit ./batch-represent/main.lua -outDir ../assets/data-of/biometix-genuine -data ../assets/db/aligned/aligned-biometix-genuine
-luajit ./batch-represent/main.lua -outDir ../assets/data-of/feret -data ../assets/db/aligned/aligned-
-
-
+256eyeslip
+python ./util/align-dlib.py ../assets/db/original/biometix-morphed/imgs/ align innerEyesAndBottomLip ../assets/db/256eyeslip/biometix-morphed/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyeslip/biometix-morphed-csv-rep -data ../assets/db/256eyeslip/biometix-morphed 
+python ./util/align-dlib.py ../assets/db/original/biometix-genuine/imgs/ align innerEyesAndBottomLip ../assets/db/256eyeslip/biometix-genuine/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyeslip/biometix-genuine-csv-rep -data ../assets/db/256eyeslip/biometix-genuine 
+python ./util/align-dlib.py ../assets/db/original/feret-genuine/imgs/ align innerEyesAndBottomLip ../assets/db/256eyeslip/feret-genuine/imgs --size 256 && luajit ./batch-represent/main.lua -outDir ../assets/db/256eyeslip/feret-genuine-csv-rep -data ../assets/db/256eyeslip/feret-genuine 
 
 file lua per embeddings in folder:
 GUIDA https://gist.github.com/ageitgey/ddbae3b209b6344a458fa41a3cf75719
