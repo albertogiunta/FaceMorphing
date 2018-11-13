@@ -19,39 +19,45 @@ def _load_csv(filename, filetype):
 
 
 def load_imgs_labels_and_csv(current_dim, current_align):
-    if current_dim == DIM_ORIGINAL:
+    if current_dim != "96":
         return [], [], [], [], [], [], [], [], []
 
     db_category = current_dim + current_align
-    biometix_morphed_labels = _load_csv("../assets/db/" + db_category + "/" + "biometix-morphed-csv-rep/labels.csv",
-                                        "labels")
-    biometix_morphed_fv = _load_csv("../assets/db/" + db_category + "/" + "biometix-morphed-csv-rep/reps.csv", "reps")
-    sorted_biometix_morphed_labels_fvs = _join_and_sort(biometix_morphed_labels, biometix_morphed_fv)
-    biometix_genuine_labels = _load_csv("../assets/db/" + db_category + "/" + "biometix-genuine-csv-rep/labels.csv",
-                                        "labels")
-    biometix_genuine_fv = _load_csv("../assets/db/" + db_category + "/" + "biometix-genuine-csv-rep/reps.csv", "reps")
-    sorted_biometix_genuine_labels_fvs = _join_and_sort(biometix_genuine_labels, biometix_genuine_fv)
-    feret_genuine_labels = _load_csv("../assets/db/" + db_category + "/" + "feret-genuine-csv-rep/labels.csv", "labels")
-    feret_genuine_fv = _load_csv("../assets/db/" + db_category + "/" + "feret-genuine-csv-rep/reps.csv", "reps")
-    sorted_feret_genuine_labels_fvs = _join_and_sort(feret_genuine_labels, feret_genuine_fv)
+    # biometix_morphed_labels = _load_csv("../assets/db/" + db_category + "/" + "biometix-morphed-csv-rep/labels.csv", "labels")
+    # biometix_morphed_fv = _load_csv("../assets/db/" + db_category + "/" + "biometix-morphed-csv-rep/reps.csv", "reps")
+    # sorted_biometix_morphed_labels_fvs = _join_and_sort(biometix_morphed_labels, biometix_morphed_fv)
+    # biometix_genuine_labels = _load_csv("../assets/db/" + db_category + "/" + "biometix-genuine-csv-rep/labels.csv", "labels")
+    # biometix_genuine_fv = _load_csv("../assets/db/" + db_category + "/" + "biometix-genuine-csv-rep/reps.csv", "reps")
+    # sorted_biometix_genuine_labels_fvs = _join_and_sort(biometix_genuine_labels, biometix_genuine_fv)
+    # feret_genuine_labels = _load_csv("../assets/db/" + db_category + "/" + "feret-genuine-csv-rep/labels.csv", "labels")
+    # feret_genuine_fv = _load_csv("../assets/db/" + db_category + "/" + "feret-genuine-csv-rep/reps.csv", "reps")
+    # sorted_feret_genuine_labels_fvs = _join_and_sort(feret_genuine_labels, feret_genuine_fv)
 
-    return biometix_morphed_labels, biometix_morphed_fv, sorted_biometix_morphed_labels_fvs, \
-           biometix_genuine_labels, biometix_genuine_fv, sorted_biometix_genuine_labels_fvs, \
-           feret_genuine_labels, feret_genuine_fv, sorted_feret_genuine_labels_fvs
+    morphed_labels = _load_csv("../assets/db/digital/" + db_category + "/" + "morphed-csv-rep/labels.csv", "labels")
+    morphed_fv = _load_csv("../assets/db/digital/" + db_category + "/" + "morphed-csv-rep/reps.csv", "reps")
+    sorted_morphed_labels_fvs = _join_and_sort(morphed_labels, morphed_fv)
+    genuine4morphed_labels = _load_csv("../assets/db/digital/" + db_category + "/" + "genuine4morphed-csv-rep/labels.csv", "labels")
+    genuine4morphed_fv = _load_csv("../assets/db/digital/" + db_category + "/" + "genuine4morphed-csv-rep/reps.csv", "reps")
+    sorted_genuine4morphed_labels_fvs = _join_and_sort(genuine4morphed_labels, genuine4morphed_fv)
+    genuine_labels = _load_csv("../assets/db/digital/" + db_category + "/" + "genuine-csv-rep/labels.csv", "labels")
+    genuine_fv = _load_csv("../assets/db/digital/" + db_category + "/" + "genuine-csv-rep/reps.csv", "reps")
+    sorted_genuine_labels_fvs = _join_and_sort(genuine_labels, genuine_fv)
+
+    return morphed_labels, morphed_fv, sorted_morphed_labels_fvs, \
+           genuine4morphed_labels, genuine4morphed_fv, sorted_genuine4morphed_labels_fvs, \
+           genuine_labels, genuine_fv, sorted_genuine_labels_fvs
 
 
 def load_imgs_dbs(current_dim, current_align):
     db_category = current_dim + current_align
-    biometix_morphed = sorted(glob.glob("../assets/db/" + db_category + "/" + "biometix-morphed/imgs/*.*"))
-    biometix_genuine = sorted(glob.glob("../assets/db/" + db_category + "/" + "biometix-genuine/imgs/*.*"))
-    feret_genuine = sorted(glob.glob("../assets/db/" + db_category + "/" + "feret-genuine/imgs/*.*"))
+    # biometix_morphed = sorted(glob.glob("../assets/db/" + db_category + "/" + "biometix-morphed/imgs/*.*"))
+    # biometix_genuine = sorted(glob.glob("../assets/db/" + db_category + "/" + "biometix-genuine/imgs/*.*"))
+    # feret_genuine = sorted(glob.glob("../assets/db/" + db_category + "/" + "feret-genuine/imgs/*.*"))
+    morphed = sorted(glob.glob("../assets/db/digital/" + db_category + "/" + "morphed/imgs/*.*"))
+    genuine4morphed = sorted(glob.glob("../assets/db/digital/" + db_category + "/" + "genuine4morphed/imgs/*.*"))
+    genuine = sorted(glob.glob("../assets/db/digital/" + db_category + "/" + "genuine/imgs/*.*"))
 
-    if current_align == ALIGN_NONE:
-        should_preprocess = True
-    else:
-        should_preprocess = False
-
-    return biometix_morphed, biometix_genuine, feret_genuine, should_preprocess
+    return morphed, genuine4morphed, genuine
 
 
 def load_data_for_current_method(current_method, current_dim, current_align):

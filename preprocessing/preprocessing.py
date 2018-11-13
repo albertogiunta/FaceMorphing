@@ -40,7 +40,7 @@ class Preprocessing:
                 len(faces_bounding_boxes), self.img_path))
             return None
 
-        # img_utils.show_img_dlib(img, bounding_box=faces_bounding_boxes)
+        # img_utils.show_img_dlib(self.img, bounding_box=faces_bounding_boxes)
 
         faces = dlib.full_object_detections()
         for detection in faces_bounding_boxes:

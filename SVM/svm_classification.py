@@ -22,16 +22,18 @@ class SVMClassifier:
 
         tuned_parameters = [
             {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
-            {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]}
+            # {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]}
             # {'kernel': ['poly'], 'C': [1, 10, 100, 1000], 'degree': [3, 4, 5], 'gamma': [1e-3, 1e-4]}
         ]
 
-        scores = ['recall']
+        scores = ['f1']
 
         for score in scores:
             from sklearn.model_selection import GridSearchCV
             from sklearn.svm import SVC
-            clf = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5, scoring='%s_macro' % score)
+            # clf = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+            clf = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5, n_jobs=-1)
+            # clf = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5)
             clf.fit(X_train, y_train)
 
             print("Best parameters set found:")
@@ -131,27 +133,6 @@ class SVMClassifier:
 
         self._print_apcer_bpcer_table(frrs)
         return
-
-    def find_false_negatives(self, feature_vectors, classes):
-        X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
-        self._load_classifier()
-        from launcher import biometix_runner
-        from utils import img_utils
-        num_genuine_train = classes.count(1)
-        for i in range(len(X_test)):
-            curr_fv = X_test[i]
-            curr_cls = y_test[i]
-            curr_index = feature_vectors.index(curr_fv)
-
-            if curr_cls == -1 or curr_cls == 0:
-                curr_index -= num_genuine_train
-                ok_pred = self.clf.predict([curr_fv]) == curr_cls
-                if not ok_pred:
-                    # img_utils.show_img_skimage(biometix_runner.get_nth_morphed_image(curr_index))
-                    morphed, genuine = biometix_runner.get_nth_morphed_genuine_pair(curr_index)
-                    img_utils.show_imgs_skimage(
-                        (img_utils.load_img_skimage(morphed), img_utils.load_img_skimage(genuine)))
-                    # img_utils.show_img_skimage(img_utils.load_img_skimage(genuine))
 
     def find_nearest(self, array, value):
         new_array = []
