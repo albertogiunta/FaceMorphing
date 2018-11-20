@@ -49,12 +49,15 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
                 for col in range(self.n_cols):
                     curr_block = lbp_img_as_blocks[row, col]
                     feature_vector = np.append(feature_vector, self._get_histogram(curr_block))
-
         return feature_vector
 
     def _get_histogram(self, block):
-        # hist will be 255 elements long because 255 is the number of colors used as bins
-        hist, _ = np.histogram(block, bins=np.arange(0, self.nbp_method_colors))
+        hist, _ = np.histogram(block, density=False, bins=range(self.nbp_method_colors))
+        # from sklearn.preprocessing import StandardScaler
+        # hist = StandardScaler().fit_transform([hist])
+        # hist = MinMaxScaler().fit_transform([hist])
+        # hist = hist.astype("float")
+        # hist /= (hist.sum() + np.finfo(float).eps)
         # self._show_block_histogram(block)
         return hist
 

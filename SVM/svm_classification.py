@@ -10,8 +10,9 @@ from tabulate import tabulate
 
 class SVMClassifier:
 
-    def __init__(self, model_name, current_dim, current_align):
+    def __init__(self, current_db, model_name, current_dim, current_align):
         self.clf = None
+        self.current_db = current_db
         self.model_name = model_name
         self.current_dim = current_dim
         self.current_align = current_align
@@ -21,8 +22,8 @@ class SVMClassifier:
         X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
 
         tuned_parameters = [
-            {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
-            # {'kernel': ['linear'], 'C': [1, 10, 100, 1000], 'max_iter': [2000]}
+            # {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},
+            {'kernel': ['linear'], 'C': [0.1, 1, 10, 100, 1000], 'max_iter': [2000]}
             # {'kernel': ['poly'], 'C': [1, 10, 100, 1000], 'degree': [3, 4, 5], 'gamma': [1e-3, 1e-4]}
         ]
 
@@ -112,27 +113,56 @@ class SVMClassifier:
         print()
         self._print_apcer_bpcer_table(bpcer)
 
-    def get_frr(self, feature_vectors, classes):
+    def get_frr(self, feature_vectors, classes, ids):
         from SVM.metrics_utils import compute_frr_at_given_far_from_probabilities
 
         self._load_classifier()
-        classes = [0 if el == -1 else el for el in classes]
-
 
         fars = [0.05, 0.1]
         frrs = []
+        farsv = []
 
-        X_train, X_test, y_train, y_test = train_test_split(feature_vectors, classes, test_size=0.3, random_state=42)
+        X_train, X_test, y_train, y_test, ids_train, ids_test = train_test_split(feature_vectors, classes, ids, test_size=0.3, random_state=42)
         y_probs = self.clf.predict_proba(X_test)
 
         print("Score: {}".format(self.clf.score(X_test, y_test)))
 
         for far in fars:
-            frr, _ = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test, 1)
+            frr, far_v = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test, 1)
             frrs.append(str(round(frr * 100, 2)) + "%")
+            farsv.append(str(round(far_v * 100, 2)) + "%")
 
-        self._print_apcer_bpcer_table(frrs)
+        self._print_apcer_bpcer_table(frrs, farsv)
+
+        print()
+        print()
+        # for el in ids_test:
+        #     print(el)
+
+        print(confusion_matrix(y_test, self.clf.predict(X_test)))
         return
+
+    def get_frr_fusion(self, feature_vectors_a, classes_a, feature_vectors_b, classes_b):
+
+        self._load_classifier()
+
+        fars = [0.05, 0.1]
+        frrs = []
+
+        X_train_a, X_test_a, y_train_a, y_test_a = train_test_split(feature_vectors_a, classes_a, test_size=0.3, random_state=42)
+        X_train_b, X_test_b, y_train_b, y_test_b = train_test_split(feature_vectors_b, classes_b, test_size=0.3, random_state=42)
+
+        y_probs_a = self.clf.predict_proba(X_test_a)
+        y_probs_b = self.clf.predict_proba(X_test_b)
+
+        # y_probs =
+        #
+        # for far in fars:
+        #     frr, _ = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test_a, 1)
+        #     frrs.append(str(round(frr * 100, 2)) + "%")
+        #
+        # self._print_apcer_bpcer_table(frrs)
+        # return
 
     def find_nearest(self, array, value):
         new_array = []
@@ -148,18 +178,18 @@ class SVMClassifier:
     def adjusted_classes(self, y_scores, t):
         return [1 if y >= t else 0 for y in y_scores]
 
-    def _print_apcer_bpcer_table(self, bpcer):
+    def _print_apcer_bpcer_table(self, bpcer, apcer):
         header = ["5.00%", "10.00%"]
-        rows = [bpcer]
+        rows = [bpcer, apcer]
         print(tabulate(rows, headers=header, floatfmt=".2f"))
 
     def _save_classifier(self):
-        with open('../assets/svm/' + self.model_name + '.pickle', 'wb') as handle:
+        with open('../assets/db/' + self.current_db + '/svm/' + self.model_name + '.pickle', 'wb') as handle:
             pickle.dump(self.clf, handle, 2)
 
     def _load_classifier(self):
+        print(self.current_db, self.model_name, self.current_dim, self.current_align)
         if self.clf is None:
             import glob
-            self.clf = pickle.load(open(glob.glob(
-                "../assets/svm/" + self.model_name + "_" + self.current_dim + "_" + self.current_align + "_" + "*.pickle")[
-                                            0], 'rb'))
+            self.clf = pickle.load(open(glob.glob("../assets/db/" + self.current_db + "/svm/" + self.model_name + "_" + self.current_dim + "_" + self.current_align + "_" + "*.pickle")[0], 'rb'))
+        return self.clf

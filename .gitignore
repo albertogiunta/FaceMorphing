@@ -1,3 +1,6 @@
+assets/db/
+assets/json/
+assets/svm/
 biometix/
 .idea/
 # Created by https://www.gitignore.io/api/macos,python,pycharm

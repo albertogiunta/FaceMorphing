@@ -71,8 +71,7 @@ def compute_frr_at_given_far_from_distances(genuine_distances, impostor_distance
         else:
             return None, None
 
-    return compute_rejection_rate_from_distances(genuine_distances, far_thr), compute_acceptance_rate_from_distances(
-        impostor_distances, far_thr)
+    return compute_rejection_rate_from_distances(genuine_distances, far_thr), compute_acceptance_rate_from_distances(impostor_distances, far_thr)
 
 
 def get_genuine_impostor_scores(probabilities, labels, genuine_label=0):

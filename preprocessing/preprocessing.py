@@ -35,16 +35,17 @@ class Preprocessing:
     def _preprocess(self):
         faces_bounding_boxes = self.frontal_face_detector(self.img, self.upsample_times)
 
-        if len(faces_bounding_boxes) != 1:
-            print("ERROR: There should be only 1 face per image, instead there are {} in image {}".format(
-                len(faces_bounding_boxes), self.img_path))
+        if len(faces_bounding_boxes) < 1:
+            print("ERROR: There should be only 1 face per image, instead there are 0 in image {}".format(len(faces_bounding_boxes), self.img_path))
             return None
 
-        # img_utils.show_img_dlib(self.img, bounding_box=faces_bounding_boxes)
-
         faces = dlib.full_object_detections()
+
         for detection in faces_bounding_boxes:
             faces.append(self.shape_predictor(self.img, detection))
+            break
+
+        # img_utils.show_img_dlib(self.img, bounding_box=faces_bounding_boxes, shape=faces[0])
 
         new_img = dlib.get_face_chip(self.img, faces[0], size=self.img_square_size)
         return new_img

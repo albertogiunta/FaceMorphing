@@ -21,7 +21,7 @@
     "nRows": 8,
     "nCols": 8,
     "lbpMethodName": "uniform",
-    "lbpMethodColors": 256
+    "lbpMethodColors": 11
   },
   "FVMerging": {
     "differential": {},
