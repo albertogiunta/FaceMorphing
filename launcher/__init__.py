@@ -87,7 +87,7 @@ def feature_extraction_to_json():
     save_to_file(data_to_be_written, CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
 
     print("\tFinished")
-    print("Created file: ../assets/json/{}.json".format(CURRENT_METHOD))
+    print("Created JSON feature vectors file for {} {} {} {}".format(CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
 
 
 def get_fvs_no_reference():
@@ -284,7 +284,6 @@ def do_stuff():
     # find_and_save_best_clf_for_current_method()
     calculate_frr()
 
-result = []
 CURRENT_DB = DB_MORPHEDDB_DIGITAL
 
 if CURRENT_DB == DB_MORPHEDDB_DIGITAL or CURRENT_DB == DB_MORPHEDDB_PRINTEDSCANNED:

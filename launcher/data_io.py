@@ -47,11 +47,8 @@ def load_imgs_dbs(current_dim, current_align, current_db):
 
 
 def load_data_for_current_method(current_db, current_method, current_dim, current_align, tot_to_be_loaded):
-    # print("Loading data from file")
     with open('../assets/db/' + current_db + '/json/' + current_method + "_" + current_dim + "_" + current_align + '.json', 'r') as infile:
         data = json.load(infile)
-        # print("\tLoaded")
-
         feature_vectors = []
         classes = []
         ids = []
@@ -65,13 +62,9 @@ def load_data_for_current_method(current_db, current_method, current_dim, curren
                         ids.append(el['id'])
         else:
             print("PROBLEM WHILE LOADING DATA")
-        #     for el in data:
-        #         if el['fv'] is not None:
-        #             feature_vectors.append(el['fv'])
-        #             classes.append(el['cls'])
+            exit(0)
 
-        # print("\tData structures created - {} samples loaded".format(len(feature_vectors)))
-
+        print("\t{} samples loaded into memory".format(len(feature_vectors)))
         return get_svm_classifier(current_db, current_method, current_dim, current_align), feature_vectors[:tot_to_be_loaded], classes[:tot_to_be_loaded], ids[:tot_to_be_loaded]
 
 
@@ -97,10 +90,24 @@ def save_to_file(data, current_db, current_method, current_dim, current_align):
         json.dump(data, outfile, cls=NumpyEncoder)
 
 
+def save_classifier(clf, current_db, model_name):
+    with open('../assets/db/' + current_db + '/svm/' + model_name + '.pickle', 'wb') as handle:
+        import pickle
+        pickle.dump(clf, handle, 2)
+
+
+def load_classifier(clf, current_db, model_name, current_dim, current_align):
+    print(current_db, model_name, current_dim, current_align)
+    if clf is None:
+        import glob
+        import pickle
+        clf = pickle.load(open(glob.glob("../assets/db/" + current_db + "/svm/" + model_name + "_" + current_dim + "_" + current_align + "_" + "*.pickle")[0], 'rb'))
+    return clf
+
+
 def _join_and_sort(a, b):
     result = []
     if len(a) == len(b):
         for i in range(len(a)):
             result.append([a[i], b[i]])
-
     return sorted(result, key=lambda x: x[0])
