@@ -43,8 +43,11 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
         if use_img_as_patch:
             feature_vector = np.append(feature_vector, self._get_histogram(lbp_img))
         else:
-            lbp_img_as_blocks = \
-                view_as_blocks(lbp_img, (int(self.img_size / self.grid_size), int(self.img_size / self.grid_size)))
+            try:
+                lbp_img_as_blocks = view_as_blocks(lbp_img, (int(self.img_size / self.grid_size), int(self.img_size / self.grid_size)))
+            except ValueError:
+                img_utils.show_img_skimage(self.img)
+                exit(0)
             for row in range(self.n_rows):
                 for col in range(self.n_cols):
                     curr_block = lbp_img_as_blocks[row, col]
@@ -53,12 +56,6 @@ class LBPHFeatureVectorExtraction(AbstractFVExtraction):
 
     def _get_histogram(self, block):
         hist, _ = np.histogram(block, density=False, bins=range(self.nbp_method_colors))
-        # from sklearn.preprocessing import StandardScaler
-        # hist = StandardScaler().fit_transform([hist])
-        # hist = MinMaxScaler().fit_transform([hist])
-        # hist = hist.astype("float")
-        # hist /= (hist.sum() + np.finfo(float).eps)
-        # self._show_block_histogram(block)
         return hist
 
     def _show_block_histogram(self, block):

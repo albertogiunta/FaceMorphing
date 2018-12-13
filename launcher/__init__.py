@@ -7,66 +7,75 @@ from launcher.data_io import load_data_for_current_method, load_imgs_dbs, load_i
 from utils import img_utils
 from utils.base_utils import print_status
 
-SVM_LINEAR = "LINEAR_SVM"
-SVM_RBF = "RBF_SVM"
-SVM_POLY = "POLY_SVM"
-SVM_SIGM = "SIGM_SVM"
+TASK_TRAINING = "training"
+TASK_TESTING = "testing"
+
+IMG_TYPE_DIGITAL = "digital"
+IMG_TYPE_PS = "ps"
+IMG_TYPE_BOTH = "both"
+
+DB_MORPHEDDB = "morphedDB"
+DB_PMDB = "pmDB"
+DB_BIOMETIX = "biometix"
 
 DIM_96 = "96"
 DIM_256 = "256"
-DIM_ORIGINAL = "original"
-DIM_ORIGINAL_UNCROPPED = "original_uncropped"
 
+ALIGN_DLIB = "dlib"
 ALIGN_EYES_NOSE = "eyesnose"
 ALIGN_EYES_LIP = "eyeslip"
-ALIGN_NONE = ""
 
+FVC_LBPH = "FVC_LBPH"
 FVC_CNN = "FVC_CNN"
 FVC_CNN_OF = "FVC_CNN_OF"
-FVC_LBPH = "FVC_LBPH"
 
+DFC_LBPH = "DFC_LBPH"
 DFC_CNN = "DFC_CNN"
 DFC_CNN_OF = "DFC_CNN_OF"
-DFC_LBPH = "DFC_LBPH"
 
 PPC4_LBPH = "PPC4_LBPH"
 PPC8_LBPH = "PPC8_LBPH"
 PPC12_LBPH = "PPC12_LBPH"
 PPC16_LBPH = "PPC16_LBPH"
 
-DB_MORPHEDDB_DIGITAL = "morpheddbdigital"
-DB_MORPHEDDB_PRINTEDSCANNED = "morpheddbprintedscanned"
-DB_BIOMETIX_FERET = "biometixferet"
-
 
 def save_preprocessed_originals_to_file():
-    morphed, genuine4morphed, genuine = load_imgs_dbs(DIM_ORIGINAL, ALIGN_NONE, CURRENT_DB)
+    morphed, genuine4morphed, genuine = load_imgs_dbs(build_string_db())
+    # morphed, genuine4morphed, genuine = load_imgs_dbs("testing/digital/biometix/raw")
 
-    for i, img in enumerate(morphed):
-        print(img)
-        print_status(i)
-        new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))[0]
-        imsave(img, new_img)
+    do_mor = False
+    do_gen = True
+    do_g4m = False
 
-    # for i, img in enumerate(genuine):
-    #     print(img)
-    #     print_status(i)
-    #     new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))
-    #     if len(new_img) >= 1:
-    #         imsave(img, new_img[0])
-    #
-    # for i, img in enumerate(genuine4morphed):
-    #     print(img)
-    #     print_status(i)
-    #     new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))
-    #     if len(new_img) >= 1:
-    #         imsave(img, new_img[0])
+    if do_mor:
+        for i, img in enumerate(morphed):
+            print(img)
+            print_status(i)
+            new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))[0]
+            # from skimage.transform import resize
+            # new_img = resize(img_utils.load_img_dlib_rgb(img), (256, 256))
+            imsave(img, new_img)
+
+    if do_gen:
+        for i, img in enumerate(genuine):
+            print(img)
+            print_status(i)
+            new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))
+            if len(new_img) >= 1:
+                imsave(img, new_img[0])
+
+    if do_g4m:
+        for i, img in enumerate(genuine4morphed):
+            print(img)
+            print_status(i)
+            new_img = apply_preproc(img_utils.load_img_dlib_rgb(img))
+            if len(new_img) >= 1:
+                imsave(img, new_img[0])
 
 def feature_extraction_to_json():
     from launcher.data_io import get_data_to_be_written
     from launcher.data_io import save_to_file
-    print("Processing images with method: {} {} {}".format(CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
-    print("\tTraining")
+    print("Processing images with method: {} {}".format(build_string_db(), CURRENT_METHOD))
     data_to_be_written = []
 
     if CURRENT_METHOD == FVC_CNN or CURRENT_METHOD == FVC_LBPH or CURRENT_METHOD == FVC_CNN_OF:
@@ -82,28 +91,26 @@ def feature_extraction_to_json():
         if el[0] is None or len(el[0]) < 1:
             data_to_be_written.pop(i)
 
-    print("\tWriting data to file (data length: {} {})".format(len(data_to_be_written[0]), len(data_to_be_written[1])))
+    print("\tWriting data to file (data length: {} morphed + {} genuines)".format(len(data_to_be_written[0]), len(data_to_be_written[1])))
     data_to_be_written = np.array(data_to_be_written).flatten()
-    save_to_file(data_to_be_written, CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
+    save_to_file(data_to_be_written, build_string_db_for_json(), CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
 
-    print("\tFinished")
-    print("Created JSON feature vectors file for {} {} {} {}".format(CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
+    print("Created JSON feature vectors file for {} {}\n\n".format(build_string_db(), CURRENT_METHOD))
 
 
 def get_fvs_no_reference():
     fvs = []
     if CURRENT_METHOD == FVC_CNN_OF:
+        # TODO
         from launcher.morpheddb_runner import get_morphed_labels
         from launcher.morpheddb_runner import get_genuine_labels
-        fvs_morphed = [(morphed_fv[i], get_morphed_labels()[i]) for i in range(len(morphed_fv))]
-        fvs_genuine = [(genuine_fv[i], get_genuine_labels()[i]) for i in range(len(genuine_fv))]
+        fvs_morphed = [(morphed_fv[i], get_morphed_labels(morphed)[i]) for i in range(len(morphed_fv))]
+        fvs_genuine = [(genuine_fv[i], get_genuine_labels(genuine)[i]) for i in range(len(genuine_fv))]
     else:
-        # from launcher.biometix_runner import get_morphed_images
-        # from launcher.feret_runner import get_genuine_images
         from launcher.morpheddb_runner import get_morphed_images
         from launcher.morpheddb_runner import get_genuine_images
-        fvs_morphed = process_singles(get_morphed_images())
-        fvs_genuine = process_singles(get_genuine_images())
+        fvs_morphed = process_singles(get_morphed_images(morphed))
+        fvs_genuine = process_singles(get_genuine_images(genuine))
 
     fvs.append(fvs_morphed)
     fvs.append(fvs_genuine)
@@ -112,20 +119,14 @@ def get_fvs_no_reference():
 
 def get_fvs_differential():
     fvs = []
+    from launcher.morpheddb_runner import get_morphed_genuine_pairs
+    from launcher.morpheddb_runner import get_genuine_genuine_pairs
     if CURRENT_METHOD == DFC_CNN_OF:
-        # from launcher.openface_runner import get_morphed_genuine_diff_fv
-        # from launcher.openface_runner import get_genuine_genuine_diff_fv
-        from launcher.morpheddb_runner import get_morphed_genuine_diff_fv
-        from launcher.morpheddb_runner import get_genuine_genuine_diff_fv
-        fvs_morphed = get_morphed_genuine_diff_fv()
-        fvs_genuine = get_genuine_genuine_diff_fv()
+        fvs_morphed = get_morphed_genuine_pairs(sorted_morphed_labels_fvs, sorted_genuine_labels_fvs, CURRENT_DB, CURRENT_METHOD)
+        fvs_genuine = get_genuine_genuine_pairs(sorted_genuine_labels_fvs, sorted_genuine4morphed_labels_fvs, CURRENT_IMG_TYPE, CURRENT_DB, CURRENT_METHOD)
     else:
-        # from launcher.biometix_runner import get_morphed_genuine_pairs
-        # from launcher.feret_runner import get_genuine_genuine_pairs
-        from launcher.morpheddb_runner import get_morphed_genuine_pairs
-        from launcher.morpheddb_runner import get_genuine_genuine_pairs
-        fvs_morphed = process_pairs(get_morphed_genuine_pairs())
-        fvs_genuine = process_pairs(get_genuine_genuine_pairs())
+        fvs_morphed = process_pairs(get_morphed_genuine_pairs(morphed, genuine4morphed, CURRENT_DB, CURRENT_METHOD))
+        fvs_genuine = process_pairs(get_genuine_genuine_pairs(genuine, genuine, CURRENT_IMG_TYPE, CURRENT_DB, CURRENT_METHOD))
 
     fvs.append(fvs_morphed)
     fvs.append(fvs_genuine)
@@ -163,55 +164,72 @@ def process_pairs(pairs):
                 continue
             fv.append((DifferentialComparison.get_differential_fv_from_vector(feature_vectors), name))
         elif CURRENT_METHOD == PPC4_LBPH:
-            fv.append((apply_lbph_to_patched_img((morph, gen), 4), name))
+            fv.append((apply_lbph_to_patched_img([morph, gen], 4), name))
         elif CURRENT_METHOD == PPC8_LBPH:
-            fv.append((apply_lbph_to_patched_img((morph, gen), 8), name))
+            fv.append((apply_lbph_to_patched_img([morph, gen], 8), name))
         elif CURRENT_METHOD == PPC12_LBPH:
-            fv.append((apply_lbph_to_patched_img((morph, gen), 12), name))
+            fv.append((apply_lbph_to_patched_img([morph, gen], 12), name))
         elif CURRENT_METHOD == PPC16_LBPH:
-            fv.append((apply_lbph_to_patched_img((morph, gen), 16), name))
+            fv.append((apply_lbph_to_patched_img([morph, gen], 16), name))
     return fv
 
 
 def find_and_save_best_clf_for_current_method():
-    clf, feature_vectors, classes, ids = load_data_for_current_method(CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN, TOT_TO_BE_LOADED)
+    # load_data_for_current_method(build_string_db_for_json(), CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
+    clf, feature_vectors, classes, ids = load_data_for_current_method(build_string_db_for_json(), CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
     print("Grid search for method {} {} {}".format(CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
-    clf.grid_search_cross_val(feature_vectors, classes)
+    clf.grid_search_cross_val(feature_vectors, classes, CURRENT_TASK == TASK_TESTING)
 
 
-def calculate_frr():
-    clf, feature_vectors, classes, ids = load_data_for_current_method(CURRENT_DB, CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN, TOT_TO_BE_LOADED)
+def calculate_frr_intradb():
+    clf, feature_vectors, classes, ids = load_data_for_current_method(build_string_db_for_json(), CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
     print("\nFAR/FRR for method {} {} {}".format(CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
-    clf.get_frr(feature_vectors, classes, ids)
+    clf.get_frr(feature_vectors, classes, ids, True)
 
 
-def calculate_fusion_frr(fvc=FVC_LBPH, dfc=FVC_CNN, dim=DIM_96, align=ALIGN_EYES_LIP):
+def calculate_frr_extradb(img_type_training=IMG_TYPE_DIGITAL, img_type_testing=IMG_TYPE_DIGITAL):
+    clf, _, _, _ = load_data_for_current_method('../assets/db/' + TASK_TRAINING + "/" + img_type_training + "/" + TRAINING_DB + "/json/", CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
+    _, feature_vectors, classes, ids = load_data_for_current_method('../assets/db/' + TASK_TESTING + "/" + img_type_testing + "/" + TESTING_DB + "/json/", CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
+    print("\nFAR/FRR for method {} {} {}".format(CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN))
+    clf.get_frr(feature_vectors, classes, ids, False)
+
+
+def calculate_fusion_frr(img_type_training, img_type_testing, fvc=FVC_LBPH, dfc=FVC_CNN, dim=DIM_96, align=ALIGN_EYES_LIP):
     print()
-    print(fvc, dfc, dim, align)
-    from sklearn.model_selection import train_test_split
+    print(fvc, dfc, dim, align, TRAINING_DB, TESTING_DB)
 
-    clf_a, feature_vectors_a, classes_a = load_data_for_current_method(CURRENT_DB, fvc, dim, align, TOT_TO_BE_LOADED)
-    clf_b, feature_vectors_b, classes_b = load_data_for_current_method(CURRENT_DB, dfc, dim, align, TOT_TO_BE_LOADED)
+    is_intra = TRAINING_DB == TESTING_DB and img_type_training == img_type_testing
+
+    if is_intra:
+        clf_a, feature_vectors_a, classes_a, ids_a = load_data_for_current_method('../assets/db/' + TASK_TESTING + "/" + img_type_testing + "/" + TESTING_DB + "/json/", fvc, dim, align)
+        clf_b, feature_vectors_b, classes_b, ids_b = load_data_for_current_method('../assets/db/' + TASK_TESTING + "/" + img_type_testing + "/" + TESTING_DB + "/json/", dfc, dim, align)
+    else:
+        clf_a, _, _, _ = load_data_for_current_method('../assets/db/' + TASK_TRAINING + "/" + img_type_training + "/" + TRAINING_DB + "/json/", fvc, dim, align)
+        _, feature_vectors_a, classes_a, ids_a = load_data_for_current_method('../assets/db/' + TASK_TESTING + "/" + img_type_testing + "/" + TESTING_DB + "/json/", fvc, dim, align)
+        clf_b, _, _, _ = load_data_for_current_method('../assets/db/' + TASK_TRAINING + "/" + img_type_training + "/" + TRAINING_DB + "/json/", dfc, dim, align)
+        _, feature_vectors_b, classes_b, ids_b = load_data_for_current_method('../assets/db/' + TASK_TESTING + "/" + img_type_testing + "/" + TESTING_DB + "/json/", dfc, dim, align)
+
     clf_a = clf_a._load_classifier()
     clf_b = clf_b._load_classifier()
-    min_fv_len = min(len(feature_vectors_a), len(feature_vectors_b), TOT_TO_BE_LOADED)
+
+    min_fv_len = min(len(feature_vectors_a), len(feature_vectors_b))
     feature_vectors_a = feature_vectors_a[:min_fv_len]
     feature_vectors_b = feature_vectors_b[:min_fv_len]
     classes_a = classes_a[:min_fv_len]
     classes_b = classes_b[:min_fv_len]
 
-    X_train_a, X_test_a, y_train_a, y_test_a = train_test_split(feature_vectors_a, classes_a, test_size=0.3, random_state=42)
-    X_train_b, X_test_b, y_train_b, y_test_b = train_test_split(feature_vectors_b, classes_b, test_size=0.3, random_state=42)
+    if is_intra:
+        from sklearn.model_selection import train_test_split
+        X_train_a, X_test_a, y_train_a, y_test_a = train_test_split(feature_vectors_a, classes_a, test_size=0.3, random_state=42)
+        X_train_b, X_test_b, y_train_b, y_test_b = train_test_split(feature_vectors_b, classes_b, test_size=0.3, random_state=42)
+    else:
+        X_test_a = feature_vectors_a
+        X_test_b = feature_vectors_b
+        y_test_a = classes_a
+        y_test_b = classes_b
 
     y_probs_a = clf_a.predict_proba(X_test_a)
     y_probs_b = clf_b.predict_proba(X_test_b)
-
-    # print("How many genuines in A: " + str(len([x for x in classes_a if x == 1])))
-    # print("How many genuines in B: " + str(len([x for x in classes_b if x == 1])))
-    # print("FV A: {} - CLS A: {}".format(len(feature_vectors_a), len(classes_a)))
-    # print("FV B: {} - CLS B: {}".format(len(feature_vectors_b), len(classes_b)))
-    # print("TRAIN A: {}, TEST A: {}".format(len(X_train_a), len(X_test_a)))
-    # print("TRAIN B: {}, TEST B: {}".format(len(X_train_b), len(X_test_b)))
 
     # y_probs = np.mean([y_probs_a, y_probs_b], axis=0)
     y_probs = np.average([y_probs_a, y_probs_b], axis=0, weights=[2, 1])
@@ -222,8 +240,12 @@ def calculate_fusion_frr(fvc=FVC_LBPH, dfc=FVC_CNN, dim=DIM_96, align=ALIGN_EYES
     farsv = []
     for far in fars:
         frr, farv = compute_frr_at_given_far_from_probabilities(y_probs, far, y_test_a, 1)
-        frrs.append(str(round(frr * 100, 2)) + "%")
-        farsv.append(str(round(farv * 100, 2)) + "%")
+        if frr is None or farv is None:
+            frrs.append("100%")
+            farsv.append(str(round(far * 100, 2)) + "%")
+        else:
+            frrs.append(str(round(frr * 100, 2)) + "%")
+            farsv.append(str(round(farv * 100, 2)) + "%")
     header = ["5.00%", "10.00%"]
     rows = [frrs, farsv]
     from tabulate import tabulate
@@ -231,30 +253,23 @@ def calculate_fusion_frr(fvc=FVC_LBPH, dfc=FVC_CNN, dim=DIM_96, align=ALIGN_EYES
 
 
 def run_all_fusion():
-    # extractions = [[FVC_LBPH, DFC_LBPH], [FVC_CNN, DFC_CNN], [FVC_CNN_OF, DFC_CNN_OF]]
-    extractions = [[FVC_LBPH, FVC_CNN], [DFC_LBPH, DFC_CNN]]
+    # extractions = [[FVC_LBPH, FVC_CNN], [DFC_LBPH, DFC_CNN]]
+    extractions = [[FVC_LBPH, FVC_CNN], [DFC_LBPH, DFC_CNN], [PPC8_LBPH, DFC_CNN], [PPC12_LBPH, DFC_CNN]]
 
-    dimensions = [DIM_ORIGINAL, DIM_96, DIM_256]
-    alignments = [ALIGN_EYES_NOSE, ALIGN_EYES_LIP]
+    dimensions = [DIM_96, DIM_256]
+    alignments = [ALIGN_DLIB, ALIGN_EYES_NOSE, ALIGN_EYES_LIP]
     for extr in extractions:
-        if extr == [FVC_CNN_OF, DFC_CNN_OF]:
+        for dim in dimensions:
             for align in alignments:
-                calculate_fusion_frr(extr[0], extr[1], DIM_96, align)
-        else:
-            for dim in dimensions:
-                if dim == DIM_ORIGINAL:
-                    calculate_fusion_frr(extr[0], extr[1], dim, ALIGN_NONE)
-                else:
-                    for align in alignments:
-                        calculate_fusion_frr(extr[0], extr[1], dim, align)
+                if dim == DIM_96 and align == ALIGN_DLIB: continue
+                calculate_fusion_frr(IMG_TYPE_DIGITAL, IMG_TYPE_PS, extr[0], extr[1], dim, align)
 
 
 def run_all():
-    # methods = [FVC_LBPH, FVC_CNN, DFC_LBPH, DFC_CNN, PPC4_LBPH, PPC8_LBPH, PPC12_LBPH, PPC16_LBPH]
-    extractions = [FVC_LBPH, DFC_LBPH, FVC_CNN, DFC_CNN, FVC_CNN_OF, DFC_CNN_OF]
-    # extractions = [DFC_LBPH]
-    dimensions = [DIM_ORIGINAL, DIM_96, DIM_256]
-    alignments = [ALIGN_EYES_NOSE, ALIGN_EYES_LIP]
+    # extractions = [PPC4_LBPH, PPC8_LBPH, PPC12_LBPH, PPC16_LBPH]
+    extractions = [FVC_LBPH, DFC_LBPH, PPC8_LBPH, PPC12_LBPH, FVC_CNN, DFC_CNN]
+    dimensions = [DIM_96, DIM_256]
+    alignments = [ALIGN_DLIB, ALIGN_EYES_NOSE, ALIGN_EYES_LIP]
 
     global CURRENT_METHOD
     global CURRENT_ALIGN
@@ -262,67 +277,71 @@ def run_all():
 
     for method in extractions:
         CURRENT_METHOD = method
-        if CURRENT_METHOD == FVC_CNN_OF or CURRENT_METHOD == DFC_CNN_OF:
-            CURRENT_DIM = DIM_96
+        for dimension in dimensions:
+            CURRENT_DIM = dimension
             for alignment in alignments:
                 CURRENT_ALIGN = alignment
+                if (CURRENT_METHOD == FVC_CNN_OF or CURRENT_METHOD == DFC_CNN_OF) and \
+                        ((CURRENT_DIM == DIM_96 and CURRENT_ALIGN == ALIGN_DLIB) or CURRENT_DIM == DIM_256): continue
+                if CURRENT_DIM == DIM_96 and CURRENT_ALIGN == ALIGN_DLIB: continue
                 do_stuff()
-        else:
-            for dimension in dimensions:
-                CURRENT_DIM = dimension
-                if CURRENT_DIM == DIM_ORIGINAL:
-                    CURRENT_ALIGN = ALIGN_NONE
-                    do_stuff()
-                else:
-                    for alignment in alignments:
-                        CURRENT_ALIGN = alignment
-                        do_stuff()
 
 
 def do_stuff():
     print(CURRENT_METHOD, CURRENT_DIM, CURRENT_ALIGN)
+    global morphed
+    global genuine4morphed
+    global genuine
+    morphed, genuine4morphed, genuine = load_imgs_dbs(build_string_db())
+
+    # feature_extraction_to_json()
     # find_and_save_best_clf_for_current_method()
-    calculate_frr()
+    # calculate_frr_intradb()
+    calculate_frr_extradb(IMG_TYPE_DIGITAL, IMG_TYPE_PS)
 
-CURRENT_DB = DB_MORPHEDDB_DIGITAL
 
-if CURRENT_DB == DB_MORPHEDDB_DIGITAL or CURRENT_DB == DB_MORPHEDDB_PRINTEDSCANNED:
-    MAX_MORPHED = 100
-    MAX_GENUINES = 327
-elif CURRENT_DB == DB_BIOMETIX_FERET:
-    MAX_MORPHED = 900
-    MAX_GENUINES = 900
-else:
-    MAX_MORPHED = 0
-    MAX_GENUINES = 0
+def build_string_db():
+    return CURRENT_TASK + "/" + CURRENT_IMG_TYPE + "/" + CURRENT_DB + "/" + CURRENT_DIM + CURRENT_ALIGN
 
-TOT_TO_BE_LOADED = MAX_MORPHED + MAX_GENUINES
 
-CURRENT_METHOD = FVC_LBPH
-CURRENT_DIM = DIM_ORIGINAL
-CURRENT_ALIGN = ALIGN_NONE
+def build_string_db_for_json():
+    return '../assets/db/' + CURRENT_TASK + "/" + CURRENT_IMG_TYPE + "/" + CURRENT_DB + "/json/"
 
-if CURRENT_DIM == DIM_ORIGINAL:
-    CURRENT_ALIGN = ALIGN_NONE
-if CURRENT_METHOD == DFC_CNN_OF or CURRENT_METHOD == FVC_CNN_OF:
-    CURRENT_DIM = DIM_96
 
-morphed, genuine4morphed, genuine = load_imgs_dbs(CURRENT_DIM, CURRENT_ALIGN, CURRENT_DB)
+def build_string_db_for_svm():
+    return '../assets/db/' + CURRENT_TASK + "/" + CURRENT_IMG_TYPE + "/" + CURRENT_DB + "/svm/"
 
-morphed_labels, morphed_fv, sorted_morphed_labels_fvs, \
-genuine4morphed_labels, genuine4morphed_fv, sorted_genuine4morphed_labels_fvs, \
-genuine_labels, genuine_fv, sorted_genuine_labels_fvs = load_imgs_labels_and_csv(CURRENT_DIM, CURRENT_ALIGN, CURRENT_DB)
+
+def build_string_db_for_openface_labels():
+    return '../assets/db/' + CURRENT_TASK + "/" + CURRENT_IMG_TYPE + "/" + CURRENT_DB + "/" + CURRENT_DIM + CURRENT_ALIGN + "/"
+
 
 if __name__ == '__main__':
+    TRAINING_DB = DB_PMDB
+    TESTING_DB = DB_MORPHEDDB
+    CURRENT_TASK = TASK_TESTING
+
+    CURRENT_DB = TESTING_DB
+    CURRENT_IMG_TYPE = IMG_TYPE_DIGITAL
+    CURRENT_DIM = DIM_256
+    CURRENT_ALIGN = ALIGN_DLIB
+
+    CURRENT_METHOD = DFC_CNN
+
+    morphed, genuine4morphed, genuine = load_imgs_dbs(build_string_db())
+
+    morphed_labels, morphed_fv, sorted_morphed_labels_fvs, \
+    genuine4morphed_labels, genuine4morphed_fv, sorted_genuine4morphed_labels_fvs, \
+    genuine_labels, genuine_fv, sorted_genuine_labels_fvs = load_imgs_labels_and_csv(CURRENT_METHOD, build_string_db_for_openface_labels())
+
     # save_preprocessed_originals_to_file()
 
-    feature_extraction_to_json()
-    find_and_save_best_clf_for_current_method()
-    calculate_frr()
+    # feature_extraction_to_json()
+    # find_and_save_best_clf_for_current_method()
+    # calculate_frr_intradb()
+    # calculate_frr_extradb(IMG_TYPE_PS, IMG_TYPE_PS)
 
-    # calculate_fusion_frr()
-    # run_all_fusion()
-
-    # run_all()
+    run_all()
+    run_all_fusion()
 
     pass

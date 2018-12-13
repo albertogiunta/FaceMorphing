@@ -41,12 +41,11 @@ def apply_lbph_to_patched_img(img_pair, grid_size):
     from featureVectorMerging.differential_comparison import DifferentialComparison
 
     temp_result = []
-
     img_pair[0] = rgb2gray(img_pair[0])
     img_pair[1] = rgb2gray(img_pair[1])
 
-    img_size = 256
-    margin = 256 % grid_size
+    img_size = len(img_pair[0])
+    margin = img_size % grid_size
     if margin != 0:
         if margin % 2 == 0:
             edge_crop = int(margin / 2)
